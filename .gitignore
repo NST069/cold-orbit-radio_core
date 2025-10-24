@@ -76,3 +76,4 @@ Thumbs.db
 # Exclude tdl
 _td_database/
 _td_files/
+/cache

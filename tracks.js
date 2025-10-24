@@ -1,32 +1,23 @@
 const tdl = require('tdl')
 const { getTdjson } = require('prebuilt-tdlib')
 tdl.configure({ tdjson: getTdjson() })
-const { config } = require('dotenv')
-const fs = require("fs")
 
-config()
+require('dotenv').config()
+
+const fs = require("fs")
 
 const client = tdl.createClient({
     apiId: process.env.API_ID,
     apiHash: process.env.API_HASH,
 })
 
-exports.run = async () => {
-    connect().then(async () => {
-        await getTracksFromChannel(process.env.CHANNEL)
-
-        getRandomTrack()
-
-    })
-
-    deleteUnusedTracks()
-}
+const MUSIC_DIRECTORY = __dirname + "\\_td_files\\music\\"
 
 let t = []
 
 let trackQueue = []
 
-let musicDirectory = __dirname + "\\_td_files\\music\\"
+let isInitializing
 
 connect = async () => {
     client.on('error', err => console.error(`Client error: ${err}`))
@@ -40,6 +31,7 @@ connect = async () => {
 
     const me = await client.invoke({ '@type': 'getMe' })
     console.log(`Logged in as ${me.first_name}`)
+    this.isInitializing = true
 }
 
 
@@ -97,7 +89,7 @@ getTracksFromChannel = async (channelUsername) => {
 
     setTimeout(() => {
         getTracksFromChannel(channelUsername)
-    }, 60 * 1000) //1h
+    }, 60 * 60 * 1000) //1h
 }
 
 downloadTrack = async (fileId) => {
@@ -111,7 +103,7 @@ downloadTrack = async (fileId) => {
 
     let fileName = Date.now() + a.local.path.substring(a.local.path.lastIndexOf("."))
 
-    fs.rename(a.local.path, musicDirectory + fileName, err => {
+    fs.rename(a.local.path, MUSIC_DIRECTORY + fileName, err => {
         if (err)
             console.log(`Error when renaming: ${err.message}`)
     })
@@ -120,30 +112,37 @@ downloadTrack = async (fileId) => {
     return fileName
 }
 
-removeTrackFromQueue = () => {
-    let f = trackQueue.shift()
-    console.log(`Track ${t.find(track => track.id === f.postId).fileName} removed from queue`)
+exports.removeTrackFromQueue = () => {
+    if (trackQueue.length > 0) {
+        let f = trackQueue.shift()
+        console.log(`Track ${t.find(track => track.id === f.postId)?.fileName} removed from queue`)
+    }
 }
+
+exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
+exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
+exports.scheduleTrack = (fileName) => trackQueue.find(t => t.fileName == fileName).isScheduled = true
 
 deleteUnusedTracks = async () => {
     console.log("gc running")
-    const files = fs.readdirSync(musicDirectory)
+    const files = fs.readdirSync(MUSIC_DIRECTORY)
     console.log(files)
     for (f of files) {
         if (!trackQueue.map(e => e.fileName).includes(f)) {
             console.log(`File ${f} not presented in queue. Deleting`)
-            await fs.unlink(musicDirectory + f, err => { console.log(err ? "Error when deleting: " + err.message : `${f} deleted`) })
+            await fs.unlink(MUSIC_DIRECTORY + f, err => { console.log(err ? "Error when deleting: " + err.message : `${f} deleted`) })
         }
     }
     setTimeout(() => {
         deleteUnusedTracks()
-    }, 2 * 60 * 1000)
+    }, 10 * 60 * 1000)
 }
 
 getRandomTrack = () => {
 
     if (trackQueue.length >= 10) {
         console.log("Queue Full, waiting for 5 mins")
+        this.isInitializing = false
         setTimeout(() => {
             getRandomTrack()
         }, 5 * 60 * 1000)
@@ -156,18 +155,29 @@ getRandomTrack = () => {
     downloadTrack(randt.file_id).then(async (fileName) => {
         trackQueue.push({
             postId: randt.id,
-            fileName: fileName
+            fileName: fileName,
+            isScheduled: false,
         })
-        //send to streaming
-        setTimeout(() => removeTrackFromQueue(), randt.duration * 1000) // external from radio stream
+
         setTimeout(() => {
             getRandomTrack()
-        }, 1 * 1000) //3min, or 30s if initializing
+        }, (this.isInitializing ? 30 : 2 * 60) * 1000) //2min, or 30s if initializing
 
     }).catch(e => {
         console.log(e)
         setTimeout(() => {
             getRandomTrack()
-        }, 5 * 1000) //30s
+        }, 30 * 1000) //30s
     })
+}
+
+exports.run = async () => {
+    connect().then(async () => {
+        await getTracksFromChannel(process.env.CHANNEL)
+
+        getRandomTrack()
+
+    })
+
+    deleteUnusedTracks()
 }
