@@ -43,7 +43,7 @@ server.register(
 )
 
 def queue_current(_) 
- cur = null.get(radio_queue.current(), default = null)
+ cur = null.get(radio_queue.current())
  print(cur)
  cur_uri = null.get(request.uri(cur), default = "")
  "#{cur_uri}"

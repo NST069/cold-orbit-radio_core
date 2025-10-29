@@ -16,6 +16,7 @@ const client = tdl.createClient({
 const MUSIC_DIRECTORY = path.join(__dirname, '_td_files', 'music')
 const LIQUIDSOAP_SCRIPT_DIR = os.platform() === 'linux' ? '/etc/liquidsoap' : path.join(__dirname, 'liquidsoap')
 const QUEUE_FILE = path.join(LIQUIDSOAP_SCRIPT_DIR, 'trackQueue.json')
+const POSTS_FILE = path.join(LIQUIDSOAP_SCRIPT_DIR, 'posts.json')
 
 const GET_TRACKS_FROM_CHANNEL_TIMEOUT = 60 * 60 * 1000      //1h
 const DELETE_UNUSED_TRACKS_TIMEOUT = 10 * 60 * 1000         //10 min
@@ -29,6 +30,7 @@ let trackQueue = []
 
 let isInitializing
 let _saveTimer = null
+let _savePostsTimer = null
 
 const saveQueue = (delay = 500) => {
     if (_saveTimer) clearTimeout(_saveTimer)
@@ -70,6 +72,40 @@ const loadQueue = () => {
     }
 }
 
+const savePosts = (delay = 500) => {
+    if (_savePostsTimer) clearTimeout(_savePostsTimer)
+    _savePostsTimer = setTimeout(async () => {
+        try {
+            if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+            await fs.promises.writeFile(POSTS_FILE, JSON.stringify(tracks, null, 2), 'utf8')
+        } catch (e) {
+            console.log('Error saving posts:', e.message)
+        }
+        _savePostsTimer = null
+    }, delay)
+}
+
+const loadPosts = () => {
+    try {
+        if (!fs.existsSync(MUSIC_DIRECTORY)) {
+            fs.mkdirSync(MUSIC_DIRECTORY, { recursive: true })
+        }
+        if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) {
+            fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+        }
+
+        if (fs.existsSync(POSTS_FILE)) {
+            const raw = fs.readFileSync(POSTS_FILE, 'utf8')
+            const parsed = JSON.parse(raw)
+            if (Array.isArray(parsed)) {
+                tracks = parsed
+            }
+        }
+    } catch (e) {
+        console.log('Error loading posts:', e.message)
+    }
+}
+
 
 const connect = async () => {
     client.on('error', err => console.error(`Client error: ${err}`))
@@ -88,63 +124,76 @@ const connect = async () => {
 
 
 const getTracksFromChannel = async (channelUsername) => {
-    const channel = await client.invoke({
-        '@type': 'searchPublicChat',
-        username: channelUsername.replace('@', '')
-    })
-
-    console.log(`Getting tracks from ${channelUsername}`)
-
-    const fetchedTracks = []
-    let offsetId = 0
-    let limit = 50
-
-    while (true) {
-        const history = await client.invoke({
-            '@type': 'getChatHistory',
-            chat_id: channel.id,
-            from_message_id: offsetId,
-            offset: 0,
-            limit: limit,
-            only_local: false
+    try {
+        const channel = await client.invoke({
+            '@type': 'searchPublicChat',
+            username: channelUsername.replace('@', '')
         })
 
-        if (!history.messages.length) break
+        console.log(`Getting tracks from ${channelUsername}`)
 
-        for (const msg of history.messages) {
-            const content = msg.content
-            if (
-                content['_'] === 'messageAudio'
-            ) {
-                const audioAttr = content.audio
+        const fetchedTracks = []
+        let offsetId = 0
+        let limit = 50
 
-                fetchedTracks.push({
-                    id: msg.id,
-                    title: audioAttr?.title ?? 'Untitled',
-                    performer: audioAttr?.performer ?? 'Unknown',
-                    caption: content.caption.text,
-                    fileName: audioAttr.file_name,
-                    duration: audioAttr?.duration ?? 0,
-                    size: audioAttr?.audio?.size,
-                    file_id: audioAttr?.audio?.id,
-                    cover_id: audioAttr?.album_cover_thumbnail?.file.id,
-                })
+        while (true) {
+            const history = await client.invoke({
+                '@type': 'getChatHistory',
+                chat_id: channel.id,
+                from_message_id: offsetId,
+                offset: 0,
+                limit: limit,
+                only_local: false
+            })
+
+            if (!history.messages.length) break
+
+            for (const msg of history.messages) {
+                const content = msg.content
+                if (
+                    content['_'] === 'messageAudio'
+                ) {
+                    const audioAttr = content.audio
+
+                    fetchedTracks.push({
+                        id: msg.id,
+                        title: audioAttr?.title ?? 'Untitled',
+                        performer: audioAttr?.performer ?? 'Unknown',
+                        caption: content.caption?.text,
+                        fileName: audioAttr.file_name,
+                        duration: audioAttr?.duration ?? 0,
+                        size: audioAttr?.audio?.size,
+                        file_id: audioAttr?.audio?.id,
+                        cover_id: audioAttr?.album_cover_thumbnail?.file.id,
+                    })
+                }
             }
+
+            offsetId = history.messages[history.messages.length - 1].id
+            await new Promise(r => setTimeout(r, 500))
         }
 
-        offsetId = history.messages[history.messages.length - 1].id
-        await new Promise(r => setTimeout(r, 500))
+        if (fetchedTracks.length > 0) {
+            tracks = fetchedTracks
+            
+            savePosts()
+        } else {
+            console.log('No tracks fetched from channel; keeping existing posts if any')
+        }
+
+        setTimeout(() => {
+            getTracksFromChannel(channelUsername)
+        }, GET_TRACKS_FROM_CHANNEL_TIMEOUT)
+    } catch (e) {
+        console.log('Error fetching tracks from channel:', e.message)
+        setTimeout(() => {
+            getTracksFromChannel(channelUsername)
+        }, UNIVERSAL_RETRY_TIMEOUT)
     }
-
-    tracks = fetchedTracks
-
-    setTimeout(() => {
-        getTracksFromChannel(channelUsername)
-    }, GET_TRACKS_FROM_CHANNEL_TIMEOUT)
 }
 
 const getTrackFullName = (track) => {
-    if (!track) return 'Unknown'
+    if (!track) return '<Track not found>'
     if (track.caption) {
         const idx = track.caption.indexOf('\n')
         const firstLine = idx === -1 ? track.caption : track.caption.substring(0, idx)
@@ -241,8 +290,14 @@ const getRandomTrack = () => {
         return
     }
 
+    if (!tracks || tracks.length === 0) {
+        console.log('No track metadata available yet — retrying')
+        setTimeout(() => getRandomTrack(), UNIVERSAL_RETRY_TIMEOUT)
+        return
+    }
+
     let randt = tracks[Math.floor(Math.random() * tracks.length)]
-    console.log(randt.id)
+    console.log(randt?.id)
 
     if (trackQueue.filter(t => t.isScheduled == false).find(t => t.postId === randt.id)) {
         console.log(`Track ${getTrackFullName(randt)} already in queue. Retrying`)
@@ -275,8 +330,15 @@ const getRandomTrack = () => {
     })
 }
 
+const getTrackMetadata = (fileName) => {
+    const q = trackQueue.find(t => t.fileName == fileName)
+    if (!q) return null
+    return tracks.find(t => t.id == q.postId) || null
+}
+
 exports.run = async () => {
     loadQueue()
+    loadPosts()
 
     connect().then(async () => {
         await getTracksFromChannel(process.env.CHANNEL)
@@ -299,8 +361,7 @@ exports.removeTrackFromQueue = () => {
 
 exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
 exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
-exports.getTrackMetadata = (fileName) => tracks.find(t => t.id == trackQueue.find(t => t.fileName == fileName).postId)
-exports.getTrackTitle = (fileName) => getTrackFullName(this.getTrackMetadata(fileName))
+exports.getTrackTitle = (fileName) => getTrackFullName(getTrackMetadata(fileName))
 exports.scheduleTrack = (fileName) => {
     const entry = trackQueue.find(t => t.fileName == fileName)
     if (entry) {
