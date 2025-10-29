@@ -13,6 +13,12 @@ const client = tdl.createClient({
 
 const MUSIC_DIRECTORY = __dirname + "\\_td_files\\music\\"
 
+const GET_TRACKS_FROM_CHANNEL_TIMEOUT = 60 * 60 * 1000      //1h
+const DELETE_UNUSED_TRACKS_TIMEOUT = 10 * 60 * 1000         //10 min
+const FULL_QUEUE_TIMEOUT = 5 * 60 * 1000                    //5 min
+const GET_RANDOM_TRACK_TIMEOUT = 2 * 60 * 1000              //2 min
+const UNIVERSAL_RETRY_TIMEOUT = 30 * 1000                   //30 sec
+
 let tracks = []
 
 let trackQueue = []
@@ -88,10 +94,10 @@ getTracksFromChannel = async (channelUsername) => {
 
     setTimeout(() => {
         getTracksFromChannel(channelUsername)
-    }, 60 * 60 * 1000) //1h
+    }, GET_TRACKS_FROM_CHANNEL_TIMEOUT)
 }
 
-getTrackFullName = (track) => (track.caption) ? track.caption
+getTrackFullName = (track) => (track.caption.substring(0, track.caption.indexOf("\n"))) ? track.caption
     : (track.title && track.performer) ? `${track.performer} - ${track.title}`
         : (track.fileName.substring(0, track.fileName.lastIndexOf(".")))
 
@@ -148,7 +154,7 @@ deleteUnusedTracks = async () => {
     }
     setTimeout(() => {
         deleteUnusedTracks()
-    }, 10 * 60 * 1000)
+    }, DELETE_UNUSED_TRACKS_TIMEOUT)
 }
 
 getRandomTrack = () => {
@@ -158,12 +164,21 @@ getRandomTrack = () => {
         isInitializing = false
         setTimeout(() => {
             getRandomTrack()
-        }, 5 * 60 * 1000)
+        }, FULL_QUEUE_TIMEOUT)
         return
     }
 
     let randt = tracks[Math.floor(Math.random() * tracks.length)]
     console.log(randt.id)
+
+    if (trackQueue.filter(t => t.isScheduled == false).find(t => t.postId === randt.id)) {
+        console.log(`Track ${getTrackFullName(randt)} already in queue. Retrying`)
+        setTimeout(() => {
+            getRandomTrack()
+        }, UNIVERSAL_RETRY_TIMEOUT)
+        return
+    }
+
     downloadTrack(randt.file_id).then(async (fileName) => {
         coverFileName = await downloadTrackCover(randt.cover_id, fileName)
         trackQueue.push({
@@ -175,13 +190,13 @@ getRandomTrack = () => {
 
         setTimeout(() => {
             getRandomTrack()
-        }, (isInitializing ? 30 : 2 * 60) * 1000) //2min, or 30s if initializing
+        }, isInitializing ? UNIVERSAL_RETRY_TIMEOUT : GET_RANDOM_TRACK_TIMEOUT)
 
     }).catch(e => {
         console.log(e)
         setTimeout(() => {
             getRandomTrack()
-        }, 30 * 1000) //30s
+        }, UNIVERSAL_RETRY_TIMEOUT)
     })
 }
 

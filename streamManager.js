@@ -53,7 +53,7 @@ checkTrack = async () => {
     if (getQueueLength() > 0) {
         let length = await sendCommand("coldorbit.length").catch(e => console.log(e))
         console.log("length: " + length)
-        if (length >= 2) {
+        if (length > 0) {
             let trackNow = await sendCommand("coldorbit.current").then(res => res.substring(res.lastIndexOf("\\") + 1)).catch(e => console.log(e))
             console.log(`[Liquidsoap] Now Playing: ${trackNow}`)
             console.log(getTrackTitle(trackNow))
