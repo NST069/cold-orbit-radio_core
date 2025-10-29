@@ -50,3 +50,32 @@ exports.sendCommand = (cmd, options = {}) => {
     })
   })
 }
+
+/**
+ * Wait until a TCP port becomes available for connections.
+ * Returns true if port became available within timeout, false otherwise.
+ */
+exports.waitForTelnet = (host = '127.0.0.1', port = 1234, timeoutMs = 15000, interval = 200) => {
+  const deadline = Date.now() + timeoutMs
+  return new Promise((resolve) => {
+    const tryConnect = () => {
+      const socket = new net.Socket()
+      socket.setTimeout(1000)
+      socket.once('error', () => {
+        socket.destroy()
+        if (Date.now() > deadline) return resolve(false)
+        setTimeout(tryConnect, interval)
+      })
+      socket.once('timeout', () => {
+        socket.destroy()
+        if (Date.now() > deadline) return resolve(false)
+        setTimeout(tryConnect, interval)
+      })
+      socket.connect(port, host, () => {
+        socket.end()
+        resolve(true)
+      })
+    }
+    tryConnect()
+  })
+}

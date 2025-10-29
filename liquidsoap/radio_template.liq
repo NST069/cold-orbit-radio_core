@@ -12,7 +12,11 @@ settings.server.telnet.port := 1234
 # Queue
 radio_queue = request.queue(id="coldorbit")
 
-radio = fallback([crossfade(radio_queue), blank(duration=10.)])
+# Tuning variables
+crossfade_seconds = 3.0
+blank_seconds = 10.0
+
+radio = fallback([crossfade(radio_queue, duration=crossfade_seconds), blank(duration=blank_seconds)])
 
 # Stream out
 output.icecast(%ffmpeg(format="mp3", %audio(codec="libmp3lame")),

@@ -5,13 +5,17 @@ tdl.configure({ tdjson: getTdjson() })
 require('dotenv').config()
 
 const fs = require("fs")
+const path = require('path')
+const os = require('os')
 
 const client = tdl.createClient({
     apiId: process.env.API_ID,
     apiHash: process.env.API_HASH,
 })
 
-const MUSIC_DIRECTORY = __dirname + "\\_td_files\\music\\"
+const MUSIC_DIRECTORY = path.join(__dirname, '_td_files', 'music')
+const LIQUIDSOAP_SCRIPT_DIR = os.platform() === 'linux' ? '/etc/liquidsoap' : path.join(__dirname, 'liquidsoap')
+const QUEUE_FILE = path.join(LIQUIDSOAP_SCRIPT_DIR, 'trackQueue.json')
 
 const GET_TRACKS_FROM_CHANNEL_TIMEOUT = 60 * 60 * 1000      //1h
 const DELETE_UNUSED_TRACKS_TIMEOUT = 10 * 60 * 1000         //10 min
@@ -24,8 +28,50 @@ let tracks = []
 let trackQueue = []
 
 let isInitializing
+let _saveTimer = null
 
-connect = async () => {
+const saveQueue = (delay = 500) => {
+    if (_saveTimer) clearTimeout(_saveTimer)
+    _saveTimer = setTimeout(async () => {
+        try {
+            if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+            await fs.promises.writeFile(QUEUE_FILE, JSON.stringify(trackQueue, null, 2), 'utf8')
+        } catch (e) {
+            console.log('Error saving queue:', e.message)
+        }
+        _saveTimer = null
+    }, delay)
+}
+
+const loadQueue = () => {
+    try {
+        if (!fs.existsSync(MUSIC_DIRECTORY)) {
+            fs.mkdirSync(MUSIC_DIRECTORY, { recursive: true })
+        }
+        if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) {
+            fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+        }
+
+        if (fs.existsSync(QUEUE_FILE)) {
+            const raw = fs.readFileSync(QUEUE_FILE, 'utf8')
+            const parsed = JSON.parse(raw)
+            if (Array.isArray(parsed)) {
+                trackQueue = parsed.filter(entry => {
+                    if (!entry || !entry.fileName) return false
+                    const filePath = path.join(MUSIC_DIRECTORY, entry.fileName)
+                    const exists = fs.existsSync(filePath)
+                    if (!exists) console.log(`Queued file missing on disk, skipping: ${entry.fileName}`)
+                    return exists
+                }).map(e => ({ ...e, isScheduled: false })) // clear scheduled flags on startup
+            }
+        }
+    } catch (e) {
+        console.log('Error loading queue:', e.message)
+    }
+}
+
+
+const connect = async () => {
     client.on('error', err => console.error(`Client error: ${err}`))
     await client.login({
         async getPhoneNumber(retry) {
@@ -41,7 +87,7 @@ connect = async () => {
 }
 
 
-getTracksFromChannel = async (channelUsername) => {
+const getTracksFromChannel = async (channelUsername) => {
     const channel = await client.invoke({
         '@type': 'searchPublicChat',
         username: channelUsername.replace('@', '')
@@ -97,11 +143,31 @@ getTracksFromChannel = async (channelUsername) => {
     }, GET_TRACKS_FROM_CHANNEL_TIMEOUT)
 }
 
-getTrackFullName = (track) => (track.caption.substring(0, track.caption.indexOf("\n"))) ? track.caption
-    : (track.title && track.performer) ? `${track.performer} - ${track.title}`
-        : (track.fileName.substring(0, track.fileName.lastIndexOf(".")))
+const getTrackFullName = (track) => {
+    if (!track) return 'Unknown'
+    if (track.caption) {
+        const idx = track.caption.indexOf('\n')
+        const firstLine = idx === -1 ? track.caption : track.caption.substring(0, idx)
+        return firstLine.trim()
+    }
 
-downloadTrack = async (fileId) => {
+    const hasTitle = track.title && String(track.title).trim().length > 0
+    const hasPerformer = track.performer && String(track.performer).trim().length > 0
+
+    if (hasTitle || hasPerformer) {
+        const performer = hasPerformer ? String(track.performer).trim() : '<Неизвестен>'
+        const title = hasTitle ? String(track.title).trim() : '<Без названия>'
+        return `${performer} - ${title}`
+    }
+
+    if (track.fileName && track.fileName.lastIndexOf('.') !== -1) {
+        return track.fileName.substring(0, track.fileName.lastIndexOf('.'))
+    }
+
+    return 'Unknown'
+}
+
+const downloadTrack = async (fileId) => {
 
     let a = await client.invoke({
         _: "downloadFile",
@@ -112,16 +178,17 @@ downloadTrack = async (fileId) => {
 
     let fileName = Date.now() + a.local.path.substring(a.local.path.lastIndexOf("."))
 
-    fs.rename(a.local.path, MUSIC_DIRECTORY + fileName, err => {
-        if (err)
-            console.log(`Error when renaming: ${err.message}`)
-    })
+    try {
+        fs.renameSync(a.local.path, path.join(MUSIC_DIRECTORY, fileName))
+    } catch (err) {
+        console.log(`Error when renaming: ${err.message}`)
+    }
 
     console.log(`Track saved as ${fileName}`)
     return fileName
 }
 
-downloadTrackCover = async (fileId, trackFileName) => {
+const downloadTrackCover = async (fileId, trackFileName) => {
     if (!fileId) return null
 
     let a = await client.invoke({
@@ -133,23 +200,29 @@ downloadTrackCover = async (fileId, trackFileName) => {
 
     let fileName = trackFileName + "_cover" + a.local.path.substring(a.local.path.lastIndexOf("."))
 
-    fs.rename(a.local.path, MUSIC_DIRECTORY + fileName, err => {
-        if (err)
-            console.log(`Error when renaming: ${err.message}`)
-    })
+    try {
+        fs.renameSync(a.local.path, path.join(MUSIC_DIRECTORY, fileName))
+    } catch (err) {
+        console.log(`Error when renaming: ${err.message}`)
+    }
 
     console.log(`Track cover saved as ${fileName}`)
     return fileName
 }
 
-deleteUnusedTracks = async () => {
+const deleteUnusedTracks = async () => {
     console.log("gc running")
     const files = fs.readdirSync(MUSIC_DIRECTORY)
     console.log(files)
     for (f of files) {
         if (!trackQueue.map(e => e.fileName).includes(f.replace(/(_cover).*$/, ""))) {
             console.log(`File ${f} not presented in queue. Deleting`)
-            await fs.unlink(MUSIC_DIRECTORY + f, err => { console.log(err ? "Error when deleting: " + err.message : `${f} deleted`) })
+            try {
+                fs.unlinkSync(path.join(MUSIC_DIRECTORY, f))
+                console.log(`${f} deleted`)
+            } catch (err) {
+                console.log(`Error when deleting: ${err.message}`)
+            }
         }
     }
     setTimeout(() => {
@@ -157,7 +230,7 @@ deleteUnusedTracks = async () => {
     }, DELETE_UNUSED_TRACKS_TIMEOUT)
 }
 
-getRandomTrack = () => {
+const getRandomTrack = () => {
 
     if (trackQueue.length >= 10) {
         console.log("Queue Full, waiting for 5 mins")
@@ -188,6 +261,8 @@ getRandomTrack = () => {
             isScheduled: false,
         })
 
+        saveQueue()
+
         setTimeout(() => {
             getRandomTrack()
         }, isInitializing ? UNIVERSAL_RETRY_TIMEOUT : GET_RANDOM_TRACK_TIMEOUT)
@@ -201,6 +276,8 @@ getRandomTrack = () => {
 }
 
 exports.run = async () => {
+    loadQueue()
+
     connect().then(async () => {
         await getTracksFromChannel(process.env.CHANNEL)
 
@@ -216,6 +293,7 @@ exports.removeTrackFromQueue = () => {
     if (trackQueue.length > 0) {
         let f = trackQueue.shift()
         console.log(`Track ${tracks.find(track => track.id === f.postId)?.fileName} removed from queue`)
+        saveQueue()
     }
 }
 
@@ -223,4 +301,12 @@ exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).le
 exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
 exports.getTrackMetadata = (fileName) => tracks.find(t => t.id == trackQueue.find(t => t.fileName == fileName).postId)
 exports.getTrackTitle = (fileName) => getTrackFullName(this.getTrackMetadata(fileName))
-exports.scheduleTrack = (fileName) => trackQueue.find(t => t.fileName == fileName).isScheduled = true
+exports.scheduleTrack = (fileName) => {
+    const entry = trackQueue.find(t => t.fileName == fileName)
+    if (entry) {
+        entry.isScheduled = true
+        saveQueue()
+        return true
+    }
+    return false
+}
