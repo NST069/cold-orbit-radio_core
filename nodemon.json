@@ -1,0 +1,11 @@
+{
+    "restartable": "rs",
+    "ignore": [
+        "liquidsoap/trackQueue.json",
+        "_td_database/*",
+        "_td_files/*",
+        "temp/*",
+        "liquidsoap/liquidsoap.log"
+    ],
+    "verbose": false
+}
