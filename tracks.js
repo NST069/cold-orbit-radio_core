@@ -13,7 +13,7 @@ const client = tdl.createClient({
 
 const MUSIC_DIRECTORY = __dirname + "\\_td_files\\music\\"
 
-let t = []
+let tracks = []
 
 let trackQueue = []
 
@@ -31,7 +31,7 @@ connect = async () => {
 
     const me = await client.invoke({ '@type': 'getMe' })
     console.log(`Logged in as ${me.first_name}`)
-    this.isInitializing = true
+    isInitializing = true
 }
 
 
@@ -43,7 +43,7 @@ getTracksFromChannel = async (channelUsername) => {
 
     console.log(`Getting tracks from ${channelUsername}`)
 
-    const tracks = []
+    const fetchedTracks = []
     let offsetId = 0
     let limit = 50
 
@@ -66,15 +66,16 @@ getTracksFromChannel = async (channelUsername) => {
             ) {
                 const audioAttr = content.audio
 
-                tracks.push({
+                fetchedTracks.push({
                     id: msg.id,
                     title: audioAttr?.title ?? 'Untitled',
                     performer: audioAttr?.performer ?? 'Unknown',
-                    fullName: content.caption.text ?? `${audioAttr?.performer ?? 'Unknown'} - ${audioAttr?.title ?? 'Untitled'}`,
+                    caption: content.caption.text,
                     fileName: audioAttr.file_name,
                     duration: audioAttr?.duration ?? 0,
                     size: audioAttr?.audio?.size,
-                    file_id: audioAttr?.audio?.id
+                    file_id: audioAttr?.audio?.id,
+                    cover_id: audioAttr?.album_cover_thumbnail?.file.id,
                 })
             }
         }
@@ -83,14 +84,16 @@ getTracksFromChannel = async (channelUsername) => {
         await new Promise(r => setTimeout(r, 500))
     }
 
-    //saveTracks(tracks)
-
-    t = tracks
+    tracks = fetchedTracks
 
     setTimeout(() => {
         getTracksFromChannel(channelUsername)
     }, 60 * 60 * 1000) //1h
 }
+
+getTrackFullName = (track) => (track.caption) ? track.caption
+    : (track.title && track.performer) ? `${track.performer} - ${track.title}`
+        : (track.fileName.substring(0, track.fileName.lastIndexOf(".")))
 
 downloadTrack = async (fileId) => {
 
@@ -112,23 +115,33 @@ downloadTrack = async (fileId) => {
     return fileName
 }
 
-exports.removeTrackFromQueue = () => {
-    if (trackQueue.length > 0) {
-        let f = trackQueue.shift()
-        console.log(`Track ${t.find(track => track.id === f.postId)?.fileName} removed from queue`)
-    }
-}
+downloadTrackCover = async (fileId, trackFileName) => {
+    if (!fileId) return null
 
-exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
-exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
-exports.scheduleTrack = (fileName) => trackQueue.find(t => t.fileName == fileName).isScheduled = true
+    let a = await client.invoke({
+        _: "downloadFile",
+        file_id: fileId,
+        priority: 32,
+        synchronous: true,
+    })
+
+    let fileName = trackFileName + "_cover" + a.local.path.substring(a.local.path.lastIndexOf("."))
+
+    fs.rename(a.local.path, MUSIC_DIRECTORY + fileName, err => {
+        if (err)
+            console.log(`Error when renaming: ${err.message}`)
+    })
+
+    console.log(`Track cover saved as ${fileName}`)
+    return fileName
+}
 
 deleteUnusedTracks = async () => {
     console.log("gc running")
     const files = fs.readdirSync(MUSIC_DIRECTORY)
     console.log(files)
     for (f of files) {
-        if (!trackQueue.map(e => e.fileName).includes(f)) {
+        if (!trackQueue.map(e => e.fileName).includes(f.replace(/(_cover).*$/, ""))) {
             console.log(`File ${f} not presented in queue. Deleting`)
             await fs.unlink(MUSIC_DIRECTORY + f, err => { console.log(err ? "Error when deleting: " + err.message : `${f} deleted`) })
         }
@@ -142,26 +155,27 @@ getRandomTrack = () => {
 
     if (trackQueue.length >= 10) {
         console.log("Queue Full, waiting for 5 mins")
-        this.isInitializing = false
+        isInitializing = false
         setTimeout(() => {
             getRandomTrack()
         }, 5 * 60 * 1000)
         return
     }
-    //let t = JSON.parse(fs.readFileSync(tracksFileName));
 
-    let randt = t[Math.floor(Math.random() * t.length)]
+    let randt = tracks[Math.floor(Math.random() * tracks.length)]
     console.log(randt.id)
     downloadTrack(randt.file_id).then(async (fileName) => {
+        coverFileName = await downloadTrackCover(randt.cover_id, fileName)
         trackQueue.push({
             postId: randt.id,
             fileName: fileName,
+            coverFileName: coverFileName,
             isScheduled: false,
         })
 
         setTimeout(() => {
             getRandomTrack()
-        }, (this.isInitializing ? 30 : 2 * 60) * 1000) //2min, or 30s if initializing
+        }, (isInitializing ? 30 : 2 * 60) * 1000) //2min, or 30s if initializing
 
     }).catch(e => {
         console.log(e)
@@ -180,4 +194,18 @@ exports.run = async () => {
     })
 
     deleteUnusedTracks()
+
 }
+
+exports.removeTrackFromQueue = () => {
+    if (trackQueue.length > 0) {
+        let f = trackQueue.shift()
+        console.log(`Track ${tracks.find(track => track.id === f.postId)?.fileName} removed from queue`)
+    }
+}
+
+exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
+exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
+exports.getTrackMetadata = (fileName) => tracks.find(t => t.id == trackQueue.find(t => t.fileName == fileName).postId)
+exports.getTrackTitle = (fileName) => getTrackFullName(this.getTrackMetadata(fileName))
+exports.scheduleTrack = (fileName) => trackQueue.find(t => t.fileName == fileName).isScheduled = true

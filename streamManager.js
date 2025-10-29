@@ -1,7 +1,7 @@
 const fs = require("fs")
 const { spawn } = require("child_process")
 const { sendCommand } = require("./util/LiquidsoapClient")
-const { removeTrackFromQueue, getQueueLength, getNextTrack, scheduleTrack } = require("./tracks")
+const { removeTrackFromQueue, getQueueLength, getNextTrack, scheduleTrack, getTrackTitle } = require("./tracks")
 
 require('dotenv').config()
 
@@ -16,11 +16,10 @@ generateLiquidSoapScript = () => {
     let script = fs.readFileSync("./liquidsoap/radio_template.liq").toString()
         .replace("{PWD}", process.env.LIQUIDSOAP_PWD)
         .replace("{LOG}", __dirname.replaceAll("\\", "/") + "/liquidsoap/liquidsoap.log")
-        .replace("{ROT}", __dirname.replaceAll("\\", "/") + "/rot/")
         .trim()
 
     fs.writeFileSync(LIQUIDSOAP_SCRIPT_DIR + "\\radio.liq", script, 'utf-8')
-    console.log('[System] Liquidsoap скрипт сгенерирован')
+    console.log('[System] Liquidsoap script generated')
 }
 
 startLiquidSoap = () => {
@@ -55,9 +54,10 @@ checkTrack = async () => {
         let length = await sendCommand("coldorbit.length").catch(e => console.log(e))
         console.log("length: " + length)
         if (length >= 2) {
-            let trackNow = await sendCommand("coldorbit.current").catch(e => console.log(e))
-            console.log(`Now Playing: ${trackNow}`)
-            console.log(`Last Check: ${currentTrack}`)
+            let trackNow = await sendCommand("coldorbit.current").then(res => res.substring(res.lastIndexOf("\\") + 1)).catch(e => console.log(e))
+            console.log(`[Liquidsoap] Now Playing: ${trackNow}`)
+            console.log(getTrackTitle(trackNow))
+            console.log(`[Liquidsoap] Last Check: ${currentTrack}`)
             if (currentTrack && trackNow !== currentTrack) {
                 removeTrackFromQueue()
                 pushTrackToLiquidSoap(getNextTrack()?.fileName)
