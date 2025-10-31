@@ -2,6 +2,7 @@
     "restartable": "rs",
     "ignore": [
         "liquidsoap/trackQueue.json",
+        "liquidsoap/posts.json",
         "_td_database/*",
         "_td_files/*",
         "temp/*",

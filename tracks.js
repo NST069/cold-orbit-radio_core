@@ -7,6 +7,11 @@ require('dotenv').config()
 const fs = require("fs")
 const path = require('path')
 const os = require('os')
+const { spawn } = require('child_process')
+
+const FFMPEG_PATH = os.platform() === 'win32'
+    ? path.join("C:\\ffmpeg\\bin", 'ffmpeg.exe')
+    : 'ffmpeg'
 
 const client = tdl.createClient({
     apiId: process.env.API_ID,
@@ -175,7 +180,6 @@ const getTracksFromChannel = async (channelUsername) => {
 
         if (fetchedTracks.length > 0) {
             tracks = fetchedTracks
-            
             savePosts()
         } else {
             console.log('No tracks fetched from channel; keeping existing posts if any')
@@ -192,12 +196,14 @@ const getTracksFromChannel = async (channelUsername) => {
     }
 }
 
-const getTrackFullName = (track) => {
-    if (!track) return '<Track not found>'
+const getTrackCredits = (track) => {
+    if (!track) return { author: '<Неизвестен>', title: '<Трек не найден>' }
     if (track.caption) {
         const idx = track.caption.indexOf('\n')
         const firstLine = idx === -1 ? track.caption : track.caption.substring(0, idx)
-        return firstLine.trim()
+        const creds = firstLine.split(/[–-]/)
+        console.log("cap", creds)
+        return { author: creds[0].trim(), title: creds[1].trim() }
     }
 
     const hasTitle = track.title && String(track.title).trim().length > 0
@@ -206,14 +212,67 @@ const getTrackFullName = (track) => {
     if (hasTitle || hasPerformer) {
         const performer = hasPerformer ? String(track.performer).trim() : '<Неизвестен>'
         const title = hasTitle ? String(track.title).trim() : '<Без названия>'
-        return `${performer} - ${title}`
+        console.log("meta", performer, title)
+        return { author: performer, title: title }
     }
 
     if (track.fileName && track.fileName.lastIndexOf('.') !== -1) {
-        return track.fileName.substring(0, track.fileName.lastIndexOf('.'))
+        const creds = track.fileName.substring(0, track.fileName.lastIndexOf('.')).split(/[–-]/)
+        console.log("file", creds)
+        return { author: creds[0].trim(), title: creds[1].trim() }
     }
 
-    return 'Unknown'
+    return { author: '<Неизвестен>', title: '<Трек не распознан>' }
+}
+
+const getTrackFullName = (track) => {
+    const { author, title } = getTrackCredits(track)
+    return `${author} - ${title}`
+}
+
+const fixTrackMetadata = async (fileId, fileName) => {
+    const track = tracks.find(t => t.file_id === fileId)
+
+    const { author, title } = getTrackCredits(track)
+    if (track.performer !== author || track.title !== title) {
+
+        const tempPath = path.join(MUSIC_DIRECTORY, fileName.substring(0, fileName.lastIndexOf("."))) + '_tmp' + fileName.substring(fileName.lastIndexOf("."))
+        const filePath = path.join(MUSIC_DIRECTORY, fileName)
+        const args = [
+            '-i', filePath,
+            '-c', 'copy',
+            '-metadata', `title=${title}`,
+            '-metadata', `artist=${author}`,
+            '-y', // перезаписать без подтверждения
+            tempPath
+        ]
+
+        const child = spawn(FFMPEG_PATH, args, {
+            stdio: ["ignore", "pipe", "pipe"],
+        })
+
+        let stderr = ''
+        child.stderr.on('data', (chunk) => (stderr += chunk.toString()))
+
+        child.on('error', (err) => {
+            console.error('[FFMpeg spawn error]', err && err.message ? err.message : err)
+        })
+
+        child.on("close", (code) => {
+            if (code === 0) {
+                try {
+                    // Заменяем оригинал
+                    fs.unlink(filePath, () => { });
+                    fs.rename(tempPath, filePath, () => { });
+                } catch (err) {
+                    console.log(`Error replacing temp file ${err}`)
+                }
+                console.log(`Metadata Updated: ${fileName}`)
+            }
+            else console.error(`Error updating metadata for ${fileName}: ${stderr.trim() || 'unknown error'}`)
+        })
+    }
+    else console.log(`${fileName} valid`)
 }
 
 const downloadTrack = async (fileId) => {
@@ -234,6 +293,7 @@ const downloadTrack = async (fileId) => {
     }
 
     console.log(`Track saved as ${fileName}`)
+    fixTrackMetadata(fileId, fileName)
     return fileName
 }
 
@@ -337,8 +397,8 @@ const getTrackMetadata = (fileName) => {
 }
 
 exports.run = async () => {
-    loadQueue()
     loadPosts()
+    loadQueue()
 
     connect().then(async () => {
         await getTracksFromChannel(process.env.CHANNEL)

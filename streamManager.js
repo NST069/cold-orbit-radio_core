@@ -77,7 +77,7 @@ const checkTrack = async () => {
             length = lengthRaw
         }
         console.log("length: " + length)
-        if (length > 0) {
+        if (length >= 2) {
             let trackNow = await sendCommand("coldorbit.current").then(res => {
                 if (!res) return ""
                 const idx = Math.max(res.lastIndexOf('/'), res.lastIndexOf('\\'))
@@ -92,7 +92,7 @@ const checkTrack = async () => {
             }
             currentTrack = trackNow
         }
-        else pushTrackToLiquidSoap(getNextTrack().fileName)
+        else pushTrackToLiquidSoap(getNextTrack()?.fileName)
     }
     setTimeout(() => {
         checkTrack()

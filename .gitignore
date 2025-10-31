@@ -80,3 +80,4 @@ _td_files/
 
 # runtime queue file
 liquidsoap/trackQueue.json
+liquidsoap/posts.json
