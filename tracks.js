@@ -64,7 +64,7 @@ const loadQueue = () => {
             const parsed = JSON.parse(raw)
             if (Array.isArray(parsed)) {
                 trackQueue = parsed.filter(entry => {
-                    if (!entry || !entry.fileName) return false
+                    if (!entry || !entry.fileName || entry.isPlayed) return false
                     const filePath = path.join(MUSIC_DIRECTORY, entry.fileName)
                     const exists = fs.existsSync(filePath)
                     if (!exists) console.log(`Queued file missing on disk, skipping: ${entry.fileName}`)
@@ -323,6 +323,8 @@ const deleteUnusedTracks = async () => {
     console.log("gc running")
     const files = fs.readdirSync(MUSIC_DIRECTORY)
     console.log(files)
+    trackQueue = trackQueue.filter(e => e.isPlayed === false)
+    saveQueue()
     for (f of files) {
         if (!trackQueue.map(e => e.fileName).includes(f.replace(/(_cover).*$/, ""))) {
             console.log(`File ${f} not presented in queue. Deleting`)
@@ -374,6 +376,7 @@ const getRandomTrack = () => {
             fileName: fileName,
             coverFileName: coverFileName,
             isScheduled: false,
+            isPlayed: false,
         })
 
         saveQueue()
@@ -404,30 +407,29 @@ exports.run = async () => {
         await getTracksFromChannel(process.env.CHANNEL)
 
         getRandomTrack()
-
     })
 
     deleteUnusedTracks()
 
 }
 
-exports.removeTrackFromQueue = () => {
-    if (trackQueue.length > 0) {
-        let f = trackQueue.shift()
-        console.log(`Track ${tracks.find(track => track.id === f.postId)?.fileName} removed from queue`)
-        saveQueue()
-    }
-}
-
 exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
 exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
 exports.getTrackTitle = (fileName) => getTrackFullName(getTrackMetadata(fileName))
 exports.scheduleTrack = (fileName) => {
-    const entry = trackQueue.find(t => t.fileName == fileName)
+    const entry = trackQueue.find(t => t.fileName === fileName)
     if (entry) {
         entry.isScheduled = true
         saveQueue()
         return true
     }
     return false
+}
+exports.markTrackAsPlayed = (fileName) => {
+    const entry = trackQueue.find(t => t.fileName === fileName)
+    if (entry) {
+        entry.isPlayed = true
+        saveQueue()
+        return true
+    }
 }
