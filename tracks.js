@@ -7,6 +7,11 @@ require('dotenv').config()
 const fs = require("fs")
 const path = require('path')
 const os = require('os')
+const { spawn } = require('child_process')
+
+const FFMPEG_PATH = os.platform() === 'win32'
+    ? path.join("C:\\ffmpeg\\bin", 'ffmpeg.exe')
+    : 'ffmpeg'
 
 const client = tdl.createClient({
     apiId: process.env.API_ID,
@@ -59,7 +64,7 @@ const loadQueue = () => {
             const parsed = JSON.parse(raw)
             if (Array.isArray(parsed)) {
                 trackQueue = parsed.filter(entry => {
-                    if (!entry || !entry.fileName) return false
+                    if (!entry || !entry.fileName || entry.isPlayed) return false
                     const filePath = path.join(MUSIC_DIRECTORY, entry.fileName)
                     const exists = fs.existsSync(filePath)
                     if (!exists) console.log(`Queued file missing on disk, skipping: ${entry.fileName}`)
@@ -175,7 +180,6 @@ const getTracksFromChannel = async (channelUsername) => {
 
         if (fetchedTracks.length > 0) {
             tracks = fetchedTracks
-            
             savePosts()
         } else {
             console.log('No tracks fetched from channel; keeping existing posts if any')
@@ -192,12 +196,14 @@ const getTracksFromChannel = async (channelUsername) => {
     }
 }
 
-const getTrackFullName = (track) => {
-    if (!track) return '<Track not found>'
+const getTrackCredits = (track) => {
+    if (!track) return { author: '<Неизвестен>', title: '<Трек не найден>' }
     if (track.caption) {
         const idx = track.caption.indexOf('\n')
         const firstLine = idx === -1 ? track.caption : track.caption.substring(0, idx)
-        return firstLine.trim()
+        const creds = firstLine.split(/[–-]/)
+        console.log("cap", creds)
+        return { author: creds[0].trim(), title: creds[1].trim() }
     }
 
     const hasTitle = track.title && String(track.title).trim().length > 0
@@ -206,14 +212,67 @@ const getTrackFullName = (track) => {
     if (hasTitle || hasPerformer) {
         const performer = hasPerformer ? String(track.performer).trim() : '<Неизвестен>'
         const title = hasTitle ? String(track.title).trim() : '<Без названия>'
-        return `${performer} - ${title}`
+        console.log("meta", performer, title)
+        return { author: performer, title: title }
     }
 
     if (track.fileName && track.fileName.lastIndexOf('.') !== -1) {
-        return track.fileName.substring(0, track.fileName.lastIndexOf('.'))
+        const creds = track.fileName.substring(0, track.fileName.lastIndexOf('.')).split(/[–-]/)
+        console.log("file", creds)
+        return { author: creds[0].trim(), title: creds[1].trim() }
     }
 
-    return 'Unknown'
+    return { author: '<Неизвестен>', title: '<Трек не распознан>' }
+}
+
+const getTrackFullName = (track) => {
+    const { author, title } = getTrackCredits(track)
+    return `${author} - ${title}`
+}
+
+const fixTrackMetadata = async (fileId, fileName) => {
+    const track = tracks.find(t => t.file_id === fileId)
+
+    const { author, title } = getTrackCredits(track)
+    if (track.performer !== author || track.title !== title) {
+
+        const tempPath = path.join(MUSIC_DIRECTORY, fileName.substring(0, fileName.lastIndexOf("."))) + '_tmp' + fileName.substring(fileName.lastIndexOf("."))
+        const filePath = path.join(MUSIC_DIRECTORY, fileName)
+        const args = [
+            '-i', filePath,
+            '-c', 'copy',
+            '-metadata', `title=${title}`,
+            '-metadata', `artist=${author}`,
+            '-y', // перезаписать без подтверждения
+            tempPath
+        ]
+
+        const child = spawn(FFMPEG_PATH, args, {
+            stdio: ["ignore", "pipe", "pipe"],
+        })
+
+        let stderr = ''
+        child.stderr.on('data', (chunk) => (stderr += chunk.toString()))
+
+        child.on('error', (err) => {
+            console.error('[FFMpeg spawn error]', err && err.message ? err.message : err)
+        })
+
+        child.on("close", (code) => {
+            if (code === 0) {
+                try {
+                    // Заменяем оригинал
+                    fs.unlink(filePath, () => { });
+                    fs.rename(tempPath, filePath, () => { });
+                } catch (err) {
+                    console.log(`Error replacing temp file ${err}`)
+                }
+                console.log(`Metadata Updated: ${fileName}`)
+            }
+            else console.error(`Error updating metadata for ${fileName}: ${stderr.trim() || 'unknown error'}`)
+        })
+    }
+    else console.log(`${fileName} valid`)
 }
 
 const downloadTrack = async (fileId) => {
@@ -234,6 +293,7 @@ const downloadTrack = async (fileId) => {
     }
 
     console.log(`Track saved as ${fileName}`)
+    fixTrackMetadata(fileId, fileName)
     return fileName
 }
 
@@ -263,6 +323,8 @@ const deleteUnusedTracks = async () => {
     console.log("gc running")
     const files = fs.readdirSync(MUSIC_DIRECTORY)
     console.log(files)
+    trackQueue = trackQueue.filter(e => e.isPlayed === false)
+    saveQueue()
     for (f of files) {
         if (!trackQueue.map(e => e.fileName).includes(f.replace(/(_cover).*$/, ""))) {
             console.log(`File ${f} not presented in queue. Deleting`)
@@ -314,6 +376,7 @@ const getRandomTrack = () => {
             fileName: fileName,
             coverFileName: coverFileName,
             isScheduled: false,
+            isPlayed: false,
         })
 
         saveQueue()
@@ -337,37 +400,36 @@ const getTrackMetadata = (fileName) => {
 }
 
 exports.run = async () => {
-    loadQueue()
     loadPosts()
+    loadQueue()
 
     connect().then(async () => {
         await getTracksFromChannel(process.env.CHANNEL)
 
         getRandomTrack()
-
     })
 
     deleteUnusedTracks()
 
 }
 
-exports.removeTrackFromQueue = () => {
-    if (trackQueue.length > 0) {
-        let f = trackQueue.shift()
-        console.log(`Track ${tracks.find(track => track.id === f.postId)?.fileName} removed from queue`)
-        saveQueue()
-    }
-}
-
 exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
 exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
 exports.getTrackTitle = (fileName) => getTrackFullName(getTrackMetadata(fileName))
 exports.scheduleTrack = (fileName) => {
-    const entry = trackQueue.find(t => t.fileName == fileName)
+    const entry = trackQueue.find(t => t.fileName === fileName)
     if (entry) {
         entry.isScheduled = true
         saveQueue()
         return true
     }
     return false
+}
+exports.markTrackAsPlayed = (fileName) => {
+    const entry = trackQueue.find(t => t.fileName === fileName)
+    if (entry) {
+        entry.isPlayed = true
+        saveQueue()
+        return true
+    }
 }

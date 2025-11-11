@@ -2,8 +2,7 @@ const fs = require("fs")
 const path = require("path")
 const { spawn } = require("child_process")
 const { sendCommand, waitForTelnet } = require("./util/LiquidSoapClient")
-const { removeTrackFromQueue, getQueueLength, getNextTrack, scheduleTrack, getTrackTitle } = require("./tracks")
-const net = require('net')
+const { markTrackAsPlayed, getQueueLength, getNextTrack, scheduleTrack, getTrackTitle } = require("./tracks")
 
 require('dotenv').config()
 
@@ -77,7 +76,7 @@ const checkTrack = async () => {
             length = lengthRaw
         }
         console.log("length: " + length)
-        if (length > 0) {
+        if (length >= 2) {
             let trackNow = await sendCommand("coldorbit.current").then(res => {
                 if (!res) return ""
                 const idx = Math.max(res.lastIndexOf('/'), res.lastIndexOf('\\'))
@@ -87,12 +86,12 @@ const checkTrack = async () => {
             console.log(getTrackTitle(trackNow))
             console.log(`[Liquidsoap] Last Check: ${currentTrack}`)
             if (currentTrack && trackNow !== currentTrack) {
-                removeTrackFromQueue()
+                markTrackAsPlayed(currentTrack)
                 pushTrackToLiquidSoap(getNextTrack()?.fileName)
             }
             currentTrack = trackNow
         }
-        else pushTrackToLiquidSoap(getNextTrack().fileName)
+        else pushTrackToLiquidSoap(getNextTrack()?.fileName)
     }
     setTimeout(() => {
         checkTrack()
