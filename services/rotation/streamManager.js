@@ -1,72 +1,23 @@
-const fs = require("fs")
+
 const path = require("path")
-const { spawn } = require("child_process")
 const { sendCommand, waitForTelnet } = require("./util/LiquidSoapClient")
-const { markTrackAsPlayed, getQueueLength, getNextTrack, scheduleTrack, getTrackTitle } = require("./tracks")
+const { tgFetchClient } = require("./util/tgFetchClient")
 
-require('dotenv').config()
+require('dotenv').config({ path: path.resolve(__dirname, "../../.env") })
 
-const os = require("os")
-
-const LIQUIDSOAP_SCRIPT_DIR = os.platform() === "linux" ? "/etc/liquidsoap" : path.join(__dirname, "liquidsoap")
-const MUSIC_DIRECTORY = path.join(__dirname, "_td_files", "music")
+const MUSIC_DIRECTORY = path.resolve(__dirname, "../tgfetch/_td_files", "music")
 
 let currentTrack = ""
-
-const generateLiquidSoapScript = () => {
-    let script = fs.readFileSync("./liquidsoap/radio_template.liq").toString()
-        .replace("{PWD}", process.env.LIQUIDSOAP_PWD)
-        .replace("{LOG}", __dirname.replaceAll("\\", "/") + "/liquidsoap/liquidsoap.log")
-        .trim()
-
-    try {
-        if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) {
-            fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
-        }
-    } catch (e) {
-        console.error('[System] Failed to ensure Liquidsoap script dir:', e.message)
-    }
-
-    fs.writeFileSync(path.join(LIQUIDSOAP_SCRIPT_DIR, "radio.liq"), script, 'utf-8')
-    console.log('[System] Liquidsoap script generated')
-}
-
-const startLiquidSoap = () => {
-    console.log("[System] Starting Liquidsoap...")
-
-    const scriptPath = path.join(LIQUIDSOAP_SCRIPT_DIR, "radio.liq")
-    const child = spawn("liquidsoap", [scriptPath], {
-        stdio: ["ignore", "pipe", "pipe"],
-    })
-
-    child.on('error', (err) => {
-        console.error('[Liquidsoap spawn error]', err && err.message ? err.message : err)
-    })
-
-    child.stdout.on("data", (data) => {
-        console.log(`[Liquidsoap log] ${data.toString().trim()}`);
-    })
-
-    child.stderr.on("data", (data) => {
-        console.error(`[Liquidsoap error] ${data.toString().trim()}`);
-    })
-
-    child.on("exit", (code) => {
-        console.log(`[Liquidsoap] exited with code ${code}`);
-    })
-
-    return child;
-}
 
 const pushTrackToLiquidSoap = async (filename) => {
     const fullPath = path.join(MUSIC_DIRECTORY, filename)
     const liquidsoapPath = fullPath.replace(/\\\\/g, "/").replace(/\\/g, "/")
     await sendCommand(`coldorbit.push ${liquidsoapPath}`)
-    scheduleTrack(filename)
+    await tgFetchClient.scheduleTrack(filename)
 }
 
 const checkTrack = async () => {
-    if (getQueueLength() > 0) {
+    if (await tgFetchClient.getQueueLength() > 0) {
         let lengthRaw = await sendCommand("coldorbit.length").catch(e => { console.log(e); return null })
         let length = 0
         if (typeof lengthRaw === 'string' && lengthRaw.trim().length) {
@@ -83,24 +34,22 @@ const checkTrack = async () => {
                 return res.substring(idx + 1)
             }).catch(e => console.log(e))
             console.log(`[Liquidsoap] Now Playing: ${trackNow}`)
-            console.log(getTrackTitle(trackNow))
+            console.log(await tgFetchClient.getTrackTitle(trackNow))
             console.log(`[Liquidsoap] Last Check: ${currentTrack}`)
             if (currentTrack && trackNow !== currentTrack) {
-                markTrackAsPlayed(currentTrack)
-                pushTrackToLiquidSoap(getNextTrack()?.fileName)
+                await tgFetchClient.markTrackAsPlayed(currentTrack)
+                pushTrackToLiquidSoap(await tgFetchClient.getNextTrack())
             }
             currentTrack = trackNow
         }
-        else pushTrackToLiquidSoap(getNextTrack()?.fileName)
+        else pushTrackToLiquidSoap(await tgFetchClient.getNextTrack())
     }
     setTimeout(() => {
         checkTrack()
-    }, ((getQueueLength() > 0) ? 60 : 5) * 1000)
+    }, ((await tgFetchClient.getQueueLength() > 0) ? 60 : 5) * 1000)
 }
 
 exports.init = async () => {
-    generateLiquidSoapScript()
-    await startLiquidSoap()
 
     // Wait for Liquidsoap telnet port to become available before starting the poller.
     const telnetReady = await waitForTelnet('127.0.0.1', 1234, 15000)
@@ -109,7 +58,7 @@ exports.init = async () => {
     // If we have a local persisted queue, and Liquidsoap currently has no queued requests,
     // push the next local track immediately so playback resumes without waiting for the poller.
     try {
-        if (getQueueLength() > 0) {
+        if (await tgFetchClient.getQueueLength() > 0) {
             const remoteLenRaw = await sendCommand('coldorbit.length').catch(e => { console.log(e); return null })
             let remoteLen = 0
             if (typeof remoteLenRaw === 'string' && remoteLenRaw.trim().length) {
@@ -119,10 +68,10 @@ exports.init = async () => {
                 remoteLen = remoteLenRaw
             }
             if (remoteLen === 0) {
-                const next = getNextTrack()
-                if (next && next.fileName) {
-                    console.log('[System] Pushing persisted next track to Liquidsoap:', next.fileName)
-                    await pushTrackToLiquidSoap(next.fileName).catch(e => console.log(e))
+                const next = await tgFetchClient.getNextTrack()
+                if (next) {
+                    console.log('[System] Pushing persisted next track to Liquidsoap:', next)
+                    await pushTrackToLiquidSoap(next).catch(e => console.log(e))
                 }
             }
         }

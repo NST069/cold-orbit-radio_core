@@ -1,13 +1,13 @@
-const tdl = require('tdl')
-const { getTdjson } = require('prebuilt-tdlib')
-tdl.configure({ tdjson: getTdjson() })
-
-require('dotenv').config()
-
 const fs = require("fs")
 const path = require('path')
 const os = require('os')
 const { spawn } = require('child_process')
+
+require('dotenv').config({ path: path.resolve(__dirname, "../../.env") })
+
+const tdl = require('tdl')
+const { getTdjson } = require('prebuilt-tdlib')
+tdl.configure({ tdjson: getTdjson() })
 
 const FFMPEG_PATH = os.platform() === 'win32'
     ? path.join("C:\\ffmpeg\\bin", 'ffmpeg.exe')
@@ -19,9 +19,9 @@ const client = tdl.createClient({
 })
 
 const MUSIC_DIRECTORY = path.join(__dirname, '_td_files', 'music')
-const LIQUIDSOAP_SCRIPT_DIR = os.platform() === 'linux' ? '/etc/liquidsoap' : path.join(__dirname, 'liquidsoap')
-const QUEUE_FILE = path.join(LIQUIDSOAP_SCRIPT_DIR, 'trackQueue.json')
-const POSTS_FILE = path.join(LIQUIDSOAP_SCRIPT_DIR, 'posts.json')
+const FILES_DIR = path.join(__dirname, 'files')
+const QUEUE_FILE = path.join(FILES_DIR, 'trackQueue.json')
+const POSTS_FILE = path.join(FILES_DIR, 'posts.json')
 
 const GET_TRACKS_FROM_CHANNEL_TIMEOUT = 60 * 60 * 1000      //1h
 const DELETE_UNUSED_TRACKS_TIMEOUT = 10 * 60 * 1000         //10 min
@@ -41,7 +41,7 @@ const saveQueue = (delay = 500) => {
     if (_saveTimer) clearTimeout(_saveTimer)
     _saveTimer = setTimeout(async () => {
         try {
-            if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+            if (!fs.existsSync(FILES_DIR)) fs.mkdirSync(FILES_DIR, { recursive: true })
             await fs.promises.writeFile(QUEUE_FILE, JSON.stringify(trackQueue, null, 2), 'utf8')
         } catch (e) {
             console.log('Error saving queue:', e.message)
@@ -55,8 +55,8 @@ const loadQueue = () => {
         if (!fs.existsSync(MUSIC_DIRECTORY)) {
             fs.mkdirSync(MUSIC_DIRECTORY, { recursive: true })
         }
-        if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) {
-            fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+        if (!fs.existsSync(FILES_DIR)) {
+            fs.mkdirSync(FILES_DIR, { recursive: true })
         }
 
         if (fs.existsSync(QUEUE_FILE)) {
@@ -81,7 +81,7 @@ const savePosts = (delay = 500) => {
     if (_savePostsTimer) clearTimeout(_savePostsTimer)
     _savePostsTimer = setTimeout(async () => {
         try {
-            if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+            if (!fs.existsSync(FILES_DIR)) fs.mkdirSync(FILES_DIR, { recursive: true })
             await fs.promises.writeFile(POSTS_FILE, JSON.stringify(tracks, null, 2), 'utf8')
         } catch (e) {
             console.log('Error saving posts:', e.message)
@@ -95,8 +95,8 @@ const loadPosts = () => {
         if (!fs.existsSync(MUSIC_DIRECTORY)) {
             fs.mkdirSync(MUSIC_DIRECTORY, { recursive: true })
         }
-        if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) {
-            fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+        if (!fs.existsSync(FILES_DIR)) {
+            fs.mkdirSync(FILES_DIR, { recursive: true })
         }
 
         if (fs.existsSync(POSTS_FILE)) {
@@ -416,8 +416,9 @@ exports.run = async () => {
 exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
 exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
 exports.getTrackTitle = (fileName) => getTrackFullName(getTrackMetadata(fileName))
-exports.scheduleTrack = (fileName) => {
+exports.scheduleTrack = (fileName) => { console.log(fileName)
     const entry = trackQueue.find(t => t.fileName === fileName)
+    console.log(entry)
     if (entry) {
         entry.isScheduled = true
         saveQueue()
