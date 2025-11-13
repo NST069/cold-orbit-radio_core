@@ -9,13 +9,18 @@ const LIQUIDSOAP_SCRIPT_DIR = os.platform() === "linux" ? "/etc/liquidsoap" : pa
 
 const generateLiquidSoapScript = () => {
     let script = fs.readFileSync("./templates/radio_template.liq").toString()
-        .replace("{PWD}", process.env.LIQUIDSOAP_PWD)
-        .replace("{LOG}", __dirname.replaceAll("\\", "/") + "/logs/liquidsoap.log")
+        .replace(/{{ICECAST_HOST}}/g, process.env.ICECAST_HOST || 'localhost')
+        .replace(/{{ICECAST_PORT}}/g, process.env.ICECAST_PORT || '8000')
+        .replace(/{{ICECAST_PASSWORD}}/g, process.env.ICECAST_PASSWORD || 'hackme')
+        .replace(/{{ICECAST_MOUNT}}/g, process.env.ICECAST_MOUNT || 'radio.mp3')
+        .replace(/{{LOG}}/g, path.join(LIQUIDSOAP_SCRIPT_DIR, "/logs/liquidsoap.log"))
+        .replace(/{{CODEC}}/g, (os.platform() === "win32") ? "%ffmpeg(format=\"mp3\", %audio(codec=\"libmp3lame\"))" : "%mp3")
         .trim()
 
     try {
         if (!fs.existsSync(LIQUIDSOAP_SCRIPT_DIR)) {
             fs.mkdirSync(LIQUIDSOAP_SCRIPT_DIR, { recursive: true })
+            fs.mkdirSync(path.join(LIQUIDSOAP_SCRIPT_DIR, "logs"), { recursive: true })
         }
     } catch (e) {
         console.error('[System] Failed to ensure Liquidsoap script dir:', e.message)
@@ -52,7 +57,7 @@ const startLiquidSoap = () => {
     return child;
 }
 
-exports.init = async()=>{
+exports.init = async () => {
     generateLiquidSoapScript()
     await startLiquidSoap()
 }

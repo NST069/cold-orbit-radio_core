@@ -76,6 +76,7 @@ Thumbs.db
 services/tgfetch/_td_database/
 services/tgfetch/_td_files/
 services/tgfetch/files
+/shared
 
 # runtime queue file
 services/rotation/liquidsoap/trackQueue.json

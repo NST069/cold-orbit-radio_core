@@ -1,13 +1,14 @@
 # Settings
-settings.init.allow_root := true
-settings.log.stdout := false
-settings.log.level := 3
-settings.log.file := true
-settings.log.file.path := "{LOG}"
+set("init.allow_root", true)
+set("log.stdout", true)
+set("log.level", 3)
+set("log.file", true)
+set("log.file.path", "{{LOG}}")
 
 # Telnet
-settings.server.telnet := true
-settings.server.telnet.port := 1234
+set("server.telnet", true)
+set("server.telnet.port", 1234)
+set("server.telnet.bind_addr", "0.0.0.0")
 
 # Queue
 radio_queue = request.queue(id="coldorbit")
@@ -19,9 +20,9 @@ blank_seconds = 10.0
 radio = fallback([crossfade(radio_queue, duration=crossfade_seconds), blank(duration=blank_seconds)])
 
 # Stream out
-output.icecast(%ffmpeg(format="mp3", %audio(codec="libmp3lame")),
- host = "localhost", port = 8000,
- password = "{PWD}", mount = "radio.mp3",
+output.icecast({{CODEC}},
+ host = "{{ICECAST_HOST}}", port = {{ICECAST_PORT}},
+ password = "{{ICECAST_PASSWORD}}", mount = "{{ICECAST_MOUNT}}",
  name = "Cold Orbit Radio",
  description = "Interplanetary broadcast station",
  genre = "Various",

@@ -12,30 +12,21 @@ app.get("/health", (req, res) =>
     res.json({ status: "ok" }))
 
 app.get("/api/next-track", (req, res) =>
-    res.json({ data: getNextTrack().fileName }))
+    res.status(200).json({ data: getNextTrack().fileName }))
 
-app.get("/api/queue-length", async (req, res) => {
-    try {
-        console.log("called "+await getQueueLength())
-        res.status(200).json({ data: await getQueueLength() })//)
-    } catch (err) {
-        console.error("❌ Error in /mark-scheduled:", err);
-        res.status(500).json({ error: err.message });
-    }
-})
+app.get("/api/queue-length", async (req, res) => 
+    res.status(200).json({ data: await getQueueLength() }))
 
 app.get("/api/track-title", (req, res) =>
-    res.json({ data: getTrackTitle(req.query.fileName) }))
+    res.status(200).json({ data: getTrackTitle(req.query.fileName) }))
 
 app.post("/api/mark-scheduled", (req, res) =>
-    res.send(`scheduled: ${scheduleTrack(req.body.fileName)}`))
+    res.status(200).send(`scheduled: ${scheduleTrack(req.body.fileName)}`))
 
 app.post("/api/mark-played", (req, res) =>
-    res.send(`played: ${markTrackAsPlayed(req.body.fileName)}`))
+    res.status(200).send(`played: ${markTrackAsPlayed(req.body.fileName)}`))
 
-app.use((err, req, res, next) => {
-  console.error("Express error:", err);
-  res.status(500).json({ error: err.message });
-})
+app.on('unhandledRejection', (err) => console.error('unhandledRejection', err));
+app.on('uncaughtException', (err) => console.error('uncaughtException', err));
 
 app.listen(PORT, () => console.log(`My server is running on port ${PORT}`))

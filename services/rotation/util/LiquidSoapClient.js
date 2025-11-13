@@ -12,8 +12,10 @@ const net = require("net")
  * @returns {Promise<string>} - текст ответа без 'END'
  */
 exports.sendCommand = (cmd, options = {}) => {
+  const LIQUIDSOAP_HOST = process.env.LIQUIDSOAP_HOST || "127.0.0.1"
+
   const {
-    host = "127.0.0.1",
+    host = LIQUIDSOAP_HOST,
     port = 1234,
     timeout = 5000
   } = options
@@ -55,7 +57,7 @@ exports.sendCommand = (cmd, options = {}) => {
  * Wait until a TCP port becomes available for connections.
  * Returns true if port became available within timeout, false otherwise.
  */
-exports.waitForTelnet = (host = '127.0.0.1', port = 1234, timeoutMs = 15000, interval = 200) => {
+exports.waitForTelnet = (host = LIQUIDSOAP_HOST, port = 1234, timeoutMs = 15000, interval = 200) => {
   const deadline = Date.now() + timeoutMs
   return new Promise((resolve) => {
     const tryConnect = () => {

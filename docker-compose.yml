@@ -1,0 +1,127 @@
+services:
+  # postgres:
+  #   image: postgres:17
+  #   container_name: cor_postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: radio
+  #     POSTGRES_PASSWORD: radio_pass
+  #     POSTGRES_DB: coldorbit
+  #   volumes:
+  #     - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - cornet
+
+  tgfetch:
+    build:
+      context: .
+      dockerfile: docker/tgfetch/Dockerfile
+    container_name: cor_tgfetch
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "4001:4001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./shared/music:/app/music
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - cornet
+
+  rotation:
+    build: 
+      context: .
+      dockerfile: docker/rotation/Dockerfile
+    container_name: cor_rotation
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - TG_FETCH_URL=http://tgfetch:4001
+      - LIQUIDSOAP_HOST=liquidsoap
+      - SHARED_MUSIC_DIR=/app/music
+    ports:
+      - "4002:4002"
+    volumes:
+      - ./shared/music:/app/music
+    depends_on:
+      - tgfetch
+      - liquidsoap
+      - icecast
+    networks:
+      - cornet
+
+  liquidsoap:
+    build: 
+      context: .
+      dockerfile: docker/liquidsoap/Dockerfile
+    container_name: cor_liquidsoap
+    restart: unless-stopped
+    environment:
+      - ICECAST_HOST=icecast
+      - ICECAST_PORT=8000
+      - ICECAST_PASSWORD=hackme
+      - ICECAST_MOUNT=radio.mp3
+    ports:
+      - "4000:4000"
+      - "1234:1234"
+    volumes:
+      - ./shared/music:/app/music
+    depends_on:
+      - icecast
+    networks:
+      - cornet
+
+  # scrobbler:
+  #   build: ./docker/scrobbler
+  #   container_name: cor_scrobbler
+  #   restart: unless-stopped
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/coldorbit
+  #     - SPRING_DATASOURCE_USERNAME=radio
+  #     - SPRING_DATASOURCE_PASSWORD=radio_pass
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - cornet
+
+  # rating:
+  #   build: ./docker/rating
+  #   container_name: cor_rating
+  #   restart: unless-stopped
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/coldorbit
+  #     - SPRING_DATASOURCE_USERNAME=radio
+  #     - SPRING_DATASOURCE_PASSWORD=radio_pass
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - cornet
+
+  icecast:
+    image: moul/icecast
+    container_name: cor_icecast
+    restart: unless-stopped
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "8000:8000"
+    networks:
+      - cornet
+
+volumes:
+  postgres_data:
+
+networks:
+  cornet:
+    name: cornet
+    driver: bridge

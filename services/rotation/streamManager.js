@@ -5,7 +5,7 @@ const { tgFetchClient } = require("./util/tgFetchClient")
 
 require('dotenv').config({ path: path.resolve(__dirname, "../../.env") })
 
-const MUSIC_DIRECTORY = path.resolve(__dirname, "../tgfetch/_td_files", "music")
+const MUSIC_DIRECTORY = process.env.SHARED_MUSIC_DIR || path.resolve(__dirname, "../tgfetch/_td_files", "music")
 
 let currentTrack = ""
 

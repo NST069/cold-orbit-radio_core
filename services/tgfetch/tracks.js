@@ -19,6 +19,7 @@ const client = tdl.createClient({
 })
 
 const MUSIC_DIRECTORY = path.join(__dirname, '_td_files', 'music')
+const LINUX_MUSIC_DIRECTORY = "/app/music";
 const FILES_DIR = path.join(__dirname, 'files')
 const QUEUE_FILE = path.join(FILES_DIR, 'trackQueue.json')
 const POSTS_FILE = path.join(FILES_DIR, 'posts.json')
@@ -37,6 +38,18 @@ let isInitializing
 let _saveTimer = null
 let _savePostsTimer = null
 
+const checkDirs = () => {
+    if (!fs.existsSync(MUSIC_DIRECTORY)) {
+        fs.mkdirSync(MUSIC_DIRECTORY, { recursive: true })
+    }
+    if (os.platform() === "linux" && !fs.existsSync(LINUX_MUSIC_DIRECTORY)) {
+        fs.mkdirSync(LINUX_MUSIC_DIRECTORY, { recursive: true })
+    }
+    if (!fs.existsSync(FILES_DIR)) {
+        fs.mkdirSync(FILES_DIR, { recursive: true })
+    }
+}
+
 const saveQueue = (delay = 500) => {
     if (_saveTimer) clearTimeout(_saveTimer)
     _saveTimer = setTimeout(async () => {
@@ -52,13 +65,6 @@ const saveQueue = (delay = 500) => {
 
 const loadQueue = () => {
     try {
-        if (!fs.existsSync(MUSIC_DIRECTORY)) {
-            fs.mkdirSync(MUSIC_DIRECTORY, { recursive: true })
-        }
-        if (!fs.existsSync(FILES_DIR)) {
-            fs.mkdirSync(FILES_DIR, { recursive: true })
-        }
-
         if (fs.existsSync(QUEUE_FILE)) {
             const raw = fs.readFileSync(QUEUE_FILE, 'utf8')
             const parsed = JSON.parse(raw)
@@ -92,13 +98,6 @@ const savePosts = (delay = 500) => {
 
 const loadPosts = () => {
     try {
-        if (!fs.existsSync(MUSIC_DIRECTORY)) {
-            fs.mkdirSync(MUSIC_DIRECTORY, { recursive: true })
-        }
-        if (!fs.existsSync(FILES_DIR)) {
-            fs.mkdirSync(FILES_DIR, { recursive: true })
-        }
-
         if (fs.existsSync(POSTS_FILE)) {
             const raw = fs.readFileSync(POSTS_FILE, 'utf8')
             const parsed = JSON.parse(raw)
@@ -294,6 +293,7 @@ const downloadTrack = async (fileId) => {
 
     console.log(`Track saved as ${fileName}`)
     fixTrackMetadata(fileId, fileName)
+    relocateFileToShared(fileName)
     return fileName
 }
 
@@ -316,12 +316,22 @@ const downloadTrackCover = async (fileId, trackFileName) => {
     }
 
     console.log(`Track cover saved as ${fileName}`)
+    relocateFileToShared(fileName)
     return fileName
+}
+
+const relocateFileToShared = (fileName) => {
+    if (os.platform() === "linux") {
+        fs.copyFileSync(path.join(MUSIC_DIRECTORY, fileName), path.join(LINUX_MUSIC_DIRECTORY, fileName))
+        fs.unlinkSync(path.join(MUSIC_DIRECTORY, fileName))
+        console.log(`Moved file ${fileName} from ${MUSIC_DIRECTORY} to ${LINUX_MUSIC_DIRECTORY}`)
+    }
 }
 
 const deleteUnusedTracks = async () => {
     console.log("gc running")
-    const files = fs.readdirSync(MUSIC_DIRECTORY)
+    const workingDirectory = (os.platform() === "linux") ? LINUX_MUSIC_DIRECTORY : MUSIC_DIRECTORY
+    const files = fs.readdirSync(workingDirectory)
     console.log(files)
     trackQueue = trackQueue.filter(e => e.isPlayed === false)
     saveQueue()
@@ -329,7 +339,7 @@ const deleteUnusedTracks = async () => {
         if (!trackQueue.map(e => e.fileName).includes(f.replace(/(_cover).*$/, ""))) {
             console.log(`File ${f} not presented in queue. Deleting`)
             try {
-                fs.unlinkSync(path.join(MUSIC_DIRECTORY, f))
+                fs.unlinkSync(path.join(workingDirectory, f))
                 console.log(`${f} deleted`)
             } catch (err) {
                 console.log(`Error when deleting: ${err.message}`)
@@ -400,6 +410,7 @@ const getTrackMetadata = (fileName) => {
 }
 
 exports.run = async () => {
+    checkDirs()
     loadPosts()
     loadQueue()
 
@@ -416,7 +427,8 @@ exports.run = async () => {
 exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
 exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
 exports.getTrackTitle = (fileName) => getTrackFullName(getTrackMetadata(fileName))
-exports.scheduleTrack = (fileName) => { console.log(fileName)
+exports.scheduleTrack = (fileName) => {
+    console.log(fileName)
     const entry = trackQueue.find(t => t.fileName === fileName)
     console.log(entry)
     if (entry) {
