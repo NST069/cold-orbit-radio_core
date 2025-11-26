@@ -43,18 +43,18 @@ const startLiquidSoap = () => {
     })
 
     child.stdout.on("data", (data) => {
-        console.log(`[Liquidsoap log] ${data.toString().trim()}`);
+        console.log(`[Liquidsoap log] ${data.toString().trim()}`)
     })
 
     child.stderr.on("data", (data) => {
-        console.error(`[Liquidsoap error] ${data.toString().trim()}`);
+        console.error(`[Liquidsoap error] ${data.toString().trim()}`)
     })
 
     child.on("exit", (code) => {
-        console.log(`[Liquidsoap] exited with code ${code}`);
+        console.log(`[Liquidsoap] exited with code ${code}`)
     })
 
-    return child;
+    return child
 }
 
 exports.init = async () => {

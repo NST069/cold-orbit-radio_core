@@ -9,6 +9,9 @@ const tdl = require('tdl')
 const { getTdjson } = require('prebuilt-tdlib')
 tdl.configure({ tdjson: getTdjson() })
 
+const TrackRepository = require(path.resolve(process.env.SHARED_DB_DIR, "repositories/TrackRepository"))
+const QueueRepository = require(path.resolve(process.env.SHARED_DB_DIR, "repositories/QueueRepository"))
+
 const FFMPEG_PATH = os.platform() === 'win32'
     ? path.join("C:\\ffmpeg\\bin", 'ffmpeg.exe')
     : 'ffmpeg'
@@ -19,10 +22,7 @@ const client = tdl.createClient({
 })
 
 const MUSIC_DIRECTORY = path.join(__dirname, '_td_files', 'music')
-const LINUX_MUSIC_DIRECTORY = "/app/music";
-const FILES_DIR = path.join(__dirname, 'files')
-const QUEUE_FILE = path.join(FILES_DIR, 'trackQueue.json')
-const POSTS_FILE = path.join(FILES_DIR, 'posts.json')
+const LINUX_MUSIC_DIRECTORY = "/app/music"
 
 const GET_TRACKS_FROM_CHANNEL_TIMEOUT = 60 * 60 * 1000      //1h
 const DELETE_UNUSED_TRACKS_TIMEOUT = 10 * 60 * 1000         //10 min
@@ -30,86 +30,7 @@ const FULL_QUEUE_TIMEOUT = 5 * 60 * 1000                    //5 min
 const GET_RANDOM_TRACK_TIMEOUT = 2 * 60 * 1000              //2 min
 const UNIVERSAL_RETRY_TIMEOUT = 30 * 1000                   //30 sec
 
-let tracks = []
-
-let trackQueue = []
-
 let isInitializing
-let _saveTimer = null
-let _savePostsTimer = null
-
-const checkDirs = () => {
-    if (!fs.existsSync(MUSIC_DIRECTORY)) {
-        fs.mkdirSync(MUSIC_DIRECTORY, { recursive: true })
-    }
-    if (os.platform() === "linux" && !fs.existsSync(LINUX_MUSIC_DIRECTORY)) {
-        fs.mkdirSync(LINUX_MUSIC_DIRECTORY, { recursive: true })
-    }
-    if (!fs.existsSync(FILES_DIR)) {
-        fs.mkdirSync(FILES_DIR, { recursive: true })
-    }
-}
-
-const saveQueue = (delay = 500) => {
-    if (_saveTimer) clearTimeout(_saveTimer)
-    _saveTimer = setTimeout(async () => {
-        try {
-            if (!fs.existsSync(FILES_DIR)) fs.mkdirSync(FILES_DIR, { recursive: true })
-            await fs.promises.writeFile(QUEUE_FILE, JSON.stringify(trackQueue, null, 2), 'utf8')
-        } catch (e) {
-            console.log('Error saving queue:', e.message)
-        }
-        _saveTimer = null
-    }, delay)
-}
-
-const loadQueue = () => {
-    try {
-        if (fs.existsSync(QUEUE_FILE)) {
-            const raw = fs.readFileSync(QUEUE_FILE, 'utf8')
-            const parsed = JSON.parse(raw)
-            if (Array.isArray(parsed)) {
-                trackQueue = parsed.filter(entry => {
-                    if (!entry || !entry.fileName || entry.isPlayed) return false
-                    const filePath = path.join(MUSIC_DIRECTORY, entry.fileName)
-                    const exists = fs.existsSync(filePath)
-                    if (!exists) console.log(`Queued file missing on disk, skipping: ${entry.fileName}`)
-                    return exists
-                }).map(e => ({ ...e, isScheduled: false })) // clear scheduled flags on startup
-            }
-        }
-    } catch (e) {
-        console.log('Error loading queue:', e.message)
-    }
-}
-
-const savePosts = (delay = 500) => {
-    if (_savePostsTimer) clearTimeout(_savePostsTimer)
-    _savePostsTimer = setTimeout(async () => {
-        try {
-            if (!fs.existsSync(FILES_DIR)) fs.mkdirSync(FILES_DIR, { recursive: true })
-            await fs.promises.writeFile(POSTS_FILE, JSON.stringify(tracks, null, 2), 'utf8')
-        } catch (e) {
-            console.log('Error saving posts:', e.message)
-        }
-        _savePostsTimer = null
-    }, delay)
-}
-
-const loadPosts = () => {
-    try {
-        if (fs.existsSync(POSTS_FILE)) {
-            const raw = fs.readFileSync(POSTS_FILE, 'utf8')
-            const parsed = JSON.parse(raw)
-            if (Array.isArray(parsed)) {
-                tracks = parsed
-            }
-        }
-    } catch (e) {
-        console.log('Error loading posts:', e.message)
-    }
-}
-
 
 const connect = async () => {
     client.on('error', err => console.error(`Client error: ${err}`))
@@ -136,9 +57,9 @@ const getTracksFromChannel = async (channelUsername) => {
 
         console.log(`Getting tracks from ${channelUsername}`)
 
-        const fetchedTracks = []
         let offsetId = 0
         let limit = 50
+        let tracksProcessed = 0
 
         while (true) {
             const history = await client.invoke({
@@ -159,17 +80,30 @@ const getTracksFromChannel = async (channelUsername) => {
                 ) {
                     const audioAttr = content.audio
 
-                    fetchedTracks.push({
-                        id: msg.id,
-                        title: audioAttr?.title ?? 'Untitled',
-                        performer: audioAttr?.performer ?? 'Unknown',
-                        caption: content.caption?.text,
-                        fileName: audioAttr.file_name,
-                        duration: audioAttr?.duration ?? 0,
-                        size: audioAttr?.audio?.size,
-                        file_id: audioAttr?.audio?.id,
-                        cover_id: audioAttr?.album_cover_thumbnail?.file.id,
-                    })
+                    const trackData = {
+                        telegram_id: msg.id,
+                        title: audioAttr.title || 'Untitled',
+                        performer: audioAttr.performer || 'Unknown',
+                        caption: content.caption?.text || null,
+                        file_name: audioAttr.file_name || `${audioAttr.title || 'track'}.mp3`,
+                        duration: audioAttr.duration || 0,
+                        file_size: audioAttr.audio.size || 0,
+                        telegram_file_id: audioAttr.audio?.remote?.id || null,
+                        telegram_cover_id: audioAttr.album_cover_thumbnail?.file?.remote?.id || null,
+                    }
+
+                    try {
+                        const track = await TrackRepository.createTrackWithArtists(trackData)
+                        if (track) {
+                            tracksProcessed++
+                            console.log(`Track saved to database: ${trackData.title} by ${trackData.performer}`)
+                        }
+                    } catch (error) {
+                        if (!error.message.includes('duplicate key')) {
+                            console.error('Error saving track to database:', error)
+                        }
+                    }
+
                 }
             }
 
@@ -177,12 +111,7 @@ const getTracksFromChannel = async (channelUsername) => {
             await new Promise(r => setTimeout(r, 500))
         }
 
-        if (fetchedTracks.length > 0) {
-            tracks = fetchedTracks
-            savePosts()
-        } else {
-            console.log('No tracks fetched from channel; keeping existing posts if any')
-        }
+        console.log(`Processed ${tracksProcessed} tracks from ${channelUsername}`)
 
         setTimeout(() => {
             getTracksFromChannel(channelUsername)
@@ -197,28 +126,30 @@ const getTracksFromChannel = async (channelUsername) => {
 
 const getTrackCredits = (track) => {
     if (!track) return { author: '<Неизвестен>', title: '<Трек не найден>' }
+
     if (track.caption) {
         const idx = track.caption.indexOf('\n')
         const firstLine = idx === -1 ? track.caption : track.caption.substring(0, idx)
-        const creds = firstLine.split(/[–-]/)
+        const creds = firstLine.split(/( [–-] )/)
         console.log("cap", creds)
-        return { author: creds[0].trim(), title: creds[1].trim() }
+        return { author: creds[0].trim(), title: creds[2].trim() }
     }
 
-    const hasTitle = track.title && String(track.title).trim().length > 0
-    const hasPerformer = track.performer && String(track.performer).trim().length > 0
+    const hasTitle = track.title && track.title.trim().length > 0
+    const hasArtists = track.artists && tracingChannel.artists.length > 0
+        && track.artists.map(artist => artist.name).join(', ').trim().length > 0
 
-    if (hasTitle || hasPerformer) {
-        const performer = hasPerformer ? String(track.performer).trim() : '<Неизвестен>'
-        const title = hasTitle ? String(track.title).trim() : '<Без названия>'
+    if (hasTitle || hasArtists) {
+        const performer = hasArtists ? track.artists.map(artist => artist.name).join(', ').trim() : '<Неизвестен>'
+        const title = hasTitle ? rack.title.trim() : '<Без названия>'
         console.log("meta", performer, title)
         return { author: performer, title: title }
     }
 
     if (track.fileName && track.fileName.lastIndexOf('.') !== -1) {
-        const creds = track.fileName.substring(0, track.fileName.lastIndexOf('.')).split(/[–-]/)
+        const creds = track.fileName.substring(0, track.fileName.lastIndexOf('.')).split(/( [–-] )/)
         console.log("file", creds)
-        return { author: creds[0].trim(), title: creds[1].trim() }
+        return { author: creds[0].trim(), title: creds[2].trim() }
     }
 
     return { author: '<Неизвестен>', title: '<Трек не распознан>' }
@@ -230,93 +161,123 @@ const getTrackFullName = (track) => {
 }
 
 const fixTrackMetadata = async (fileId, fileName) => {
-    const track = tracks.find(t => t.file_id === fileId)
+    try {
+        const track = await TrackRepository.findByFileId(fileId)
 
-    const { author, title } = getTrackCredits(track)
-    if (track.performer !== author || track.title !== title) {
+        if (!track) {
+            console.log(`Track with file_id ${fileId} not found in database`)
+            return false
+        }
 
-        const tempPath = path.join(MUSIC_DIRECTORY, fileName.substring(0, fileName.lastIndexOf("."))) + '_tmp' + fileName.substring(fileName.lastIndexOf("."))
-        const filePath = path.join(MUSIC_DIRECTORY, fileName)
-        const args = [
-            '-i', filePath,
-            '-c', 'copy',
-            '-metadata', `title=${title}`,
-            '-metadata', `artist=${author}`,
-            '-y', // перезаписать без подтверждения
-            tempPath
-        ]
+        const { author, title } = getTrackCredits(track)
 
-        const child = spawn(FFMPEG_PATH, args, {
-            stdio: ["ignore", "pipe", "pipe"],
-        })
+        if (track.performer !== author || track.title !== title) {
+            console.log(`Updating metadata for ${fileName}: ${author} - ${title}`)
 
-        let stderr = ''
-        child.stderr.on('data', (chunk) => (stderr += chunk.toString()))
+            const tempPath = path.join(LINUX_MUSIC_DIRECTORY, fileName.substring(0, fileName.lastIndexOf("."))) + '_tmp' + fileName.substring(fileName.lastIndexOf("."))
+            const filePath = path.join(LINUX_MUSIC_DIRECTORY, fileName)
 
-        child.on('error', (err) => {
-            console.error('[FFMpeg spawn error]', err && err.message ? err.message : err)
-        })
+            const args = [
+                '-i', filePath,
+                '-c', 'copy',
+                '-metadata', `title=${title}`,
+                '-metadata', `artist=${author}`,
+                '-y',
+                tempPath
+            ]
 
-        child.on("close", (code) => {
-            if (code === 0) {
-                try {
-                    // Заменяем оригинал
-                    fs.unlink(filePath, () => { });
-                    fs.rename(tempPath, filePath, () => { });
-                } catch (err) {
-                    console.log(`Error replacing temp file ${err}`)
+            const child = spawn(FFMPEG_PATH, args, {
+                stdio: ["ignore", "pipe", "pipe"],
+            })
+
+            let stderr = ''
+            child.stderr.on('data', (chunk) => (stderr += chunk.toString()))
+
+            child.on('error', (err) => {
+                console.error('[FFMpeg spawn error]', err && err.message ? err.message : err)
+            })
+
+            child.on("close", async (code) => {
+                if (code === 0) {
+                    try {
+                        fs.unlink(filePath, () => { })
+                        fs.rename(tempPath, filePath, () => { })
+
+                    } catch (err) {
+                        console.log(`Error replacing temp file: ${err}`)
+                    }
+                    console.log(`Metadata Updated: ${fileName}`)
+                } else {
+                    console.error(`Error updating metadata for ${fileName}: ${stderr.trim() || 'unknown error'}`)
                 }
-                console.log(`Metadata Updated: ${fileName}`)
-            }
-            else console.error(`Error updating metadata for ${fileName}: ${stderr.trim() || 'unknown error'}`)
-        })
+            })
+        } else {
+            console.log(`${fileName} metadata is valid`)
+        }
+    } catch (error) {
+        console.error(`Error in fixTrackMetadata for file ${fileName}:`, error)
     }
-    else console.log(`${fileName} valid`)
+}
+
+const downloadFile = async (remoteFileId, fileType = "fileTypeAudio", attempt = 1) => {
+    try {
+
+        const file = await client.invoke({
+            "@type": "getRemoteFile",
+            remote_file_id: remoteFileId,
+            file_type: { "@type": fileType }
+        })
+
+        const downloaded = await client.invoke({
+            _: "downloadFile",
+            file_id: file.id,
+            priority: 1,
+            synchronous: true,
+        })
+        return downloaded.local.path
+
+    } catch (err) {
+        if (err.code === 400 && attempt <= 5) {
+            await new Promise(r => setTimeout(r, 150 * attempt))
+            return downloadFile(remoteFileId, fileType, attempt + 1)
+        }
+        throw err
+    }
 }
 
 const downloadTrack = async (fileId) => {
 
-    let a = await client.invoke({
-        _: "downloadFile",
-        file_id: fileId,
-        priority: 32,
-        synchronous: true,
-    })
+    let filePath = await (downloadFile(fileId))
 
-    let fileName = Date.now() + a.local.path.substring(a.local.path.lastIndexOf("."))
+    let fileName = Date.now() + filePath.substring(filePath.lastIndexOf("."))
 
     try {
-        fs.renameSync(a.local.path, path.join(MUSIC_DIRECTORY, fileName))
+        fs.renameSync(filePath, path.join(MUSIC_DIRECTORY, fileName))
     } catch (err) {
         console.log(`Error when renaming: ${err.message}`)
     }
 
     console.log(`Track saved as ${fileName}`)
-    fixTrackMetadata(fileId, fileName)
-    relocateFileToShared(fileName)
+    await relocateFileToShared(fileName)
+    await fixTrackMetadata(fileId, fileName)
     return fileName
 }
 
 const downloadTrackCover = async (fileId, trackFileName) => {
     if (!fileId) return null
 
-    let a = await client.invoke({
-        _: "downloadFile",
-        file_id: fileId,
-        priority: 32,
-        synchronous: true,
-    })
+    let filePath = await (downloadFile(fileId, "fileTypeThumbnail"))
 
-    let fileName = trackFileName + "_cover" + a.local.path.substring(a.local.path.lastIndexOf("."))
+    let fileName = trackFileName + "_cover" + filePath.substring(filePath.lastIndexOf("."))
 
     try {
-        fs.renameSync(a.local.path, path.join(MUSIC_DIRECTORY, fileName))
+        fs.renameSync(filePath, path.join(MUSIC_DIRECTORY, fileName))
     } catch (err) {
         console.log(`Error when renaming: ${err.message}`)
     }
 
     console.log(`Track cover saved as ${fileName}`)
-    relocateFileToShared(fileName)
+    await relocateFileToShared(fileName)
     return fileName
 }
 
@@ -330,89 +291,120 @@ const relocateFileToShared = (fileName) => {
 
 const deleteUnusedTracks = async () => {
     console.log("gc running")
-    const workingDirectory = (os.platform() === "linux") ? LINUX_MUSIC_DIRECTORY : MUSIC_DIRECTORY
-    const files = fs.readdirSync(workingDirectory)
-    console.log(files)
-    trackQueue = trackQueue.filter(e => e.isPlayed === false)
-    saveQueue()
-    for (f of files) {
-        if (!trackQueue.map(e => e.fileName).includes(f.replace(/(_cover).*$/, ""))) {
-            console.log(`File ${f} not presented in queue. Deleting`)
-            try {
-                fs.unlinkSync(path.join(workingDirectory, f))
-                console.log(`${f} deleted`)
-            } catch (err) {
-                console.log(`Error when deleting: ${err.message}`)
+
+    try {
+        const { audioFiles, coverFiles } = await QueueRepository.getActiveQueueFiles()
+        const workingDirectory = (os.platform() === "linux") ? LINUX_MUSIC_DIRECTORY : MUSIC_DIRECTORY
+        const files = fs.readdirSync(workingDirectory)
+
+        console.log(`Found ${files.length} files in directory`)
+        console.log(`Active queue files: ${audioFiles.length} audio, ${coverFiles.length} covers`)
+
+        for (const file of files) {
+            const isAudioFile = !file.includes('_cover')
+            const baseFileName = file.replace(/(_cover).*$/, "")
+
+            if (isAudioFile) {
+                if (!audioFiles.includes(baseFileName)) {
+                    console.log(`File ${file} not present in queue. Deleting`)
+                    try {
+                        fs.unlinkSync(path.join(workingDirectory, file))
+                        console.log(`${file} deleted`)
+                    } catch (err) {
+                        console.log(`Error deleting ${file}: ${err.message}`)
+                    }
+                }
+            } else {
+                if (!coverFiles.includes(file)) {
+                    console.log(`Cover file ${file} not present in queue. Deleting`)
+                    try {
+                        fs.unlinkSync(path.join(workingDirectory, file))
+                        console.log(`${file} deleted`)
+                    } catch (err) {
+                        console.log(`Error deleting cover ${file}: ${err.message}`)
+                    }
+                }
+            }
+        } false
+
+        for (const trackFileName of audioFiles) {
+            if (!files.includes(trackFileName)) {
+                console.log(`Queue Item ${trackFileName} not present in filesystem. Marking as Failed`)
+                await QueueRepository.updateQueueStatus(trackFileName, "failed")
             }
         }
+
+        console.log("Cleaning Queue")
+        let a = await QueueRepository.cleanupTrackQueue()
+        console.log(`Removed ${a} items from Queue`)
+
+        console.log("gc completed")
+
+    } catch (error) {
+        console.error("Error in deleteUnusedTracks:", error)
     }
+
     setTimeout(() => {
         deleteUnusedTracks()
     }, DELETE_UNUSED_TRACKS_TIMEOUT)
 }
 
-const getRandomTrack = () => {
+const getRandomTrack = async () => {
+    try {
+        const activeCount = await QueueRepository.getActiveCount()
 
-    if (trackQueue.length >= 10) {
-        console.log("Queue Full, waiting for 5 mins")
-        isInitializing = false
-        setTimeout(() => {
-            getRandomTrack()
-        }, FULL_QUEUE_TIMEOUT)
-        return
-    }
+        if (activeCount >= 10) {
+            console.log("Queue Full, waiting for 5 mins")
+            isInitializing = false
 
-    if (!tracks || tracks.length === 0) {
-        console.log('No track metadata available yet — retrying')
-        setTimeout(() => getRandomTrack(), UNIVERSAL_RETRY_TIMEOUT)
-        return
-    }
+            setTimeout(() => {
+                getRandomTrack()
+            }, FULL_QUEUE_TIMEOUT)
+            return
+        }
 
-    let randt = tracks[Math.floor(Math.random() * tracks.length)]
-    console.log(randt?.id)
+        const randomTrack = await TrackRepository.getRandomTrackExcludingQueue()
 
-    if (trackQueue.filter(t => t.isScheduled == false).find(t => t.postId === randt.id)) {
-        console.log(`Track ${getTrackFullName(randt)} already in queue. Retrying`)
-        setTimeout(() => {
-            getRandomTrack()
-        }, UNIVERSAL_RETRY_TIMEOUT)
-        return
-    }
+        if (!randomTrack) {
+            console.log('No available tracks - retrying')
+            setTimeout(() => getRandomTrack(), UNIVERSAL_RETRY_TIMEOUT)
+            return
+        }
 
-    downloadTrack(randt.file_id).then(async (fileName) => {
-        coverFileName = await downloadTrackCover(randt.cover_id, fileName)
-        trackQueue.push({
-            postId: randt.id,
-            fileName: fileName,
-            coverFileName: coverFileName,
-            isScheduled: false,
-            isPlayed: false,
+        console.log(`Selected random track: ${getTrackFullName(randomTrack)} (Id: ${randomTrack.id})`)
+
+        downloadTrack(randomTrack.telegram_file_id).then(async (fileName) => {
+            const coverFileName = await downloadTrackCover(randomTrack.telegram_cover_id, fileName)
+
+            await QueueRepository.addToQueue({
+                track_id: randomTrack.id,
+                file_name: fileName,
+                cover_file_name: coverFileName,
+                status: 'pending'
+            })
+
+            console.log(`Track added to queue: ${getTrackFullName(randomTrack)}`)
+
+            setTimeout(() => {
+                getRandomTrack()
+            }, isInitializing ? UNIVERSAL_RETRY_TIMEOUT : GET_RANDOM_TRACK_TIMEOUT)
+
+        }).catch(error => {
+            console.error(`Error downloading track ${getTrackFullName(randomTrack)}:`, error)
+            setTimeout(() => {
+                getRandomTrack()
+            }, UNIVERSAL_RETRY_TIMEOUT)
         })
 
-        saveQueue()
-
-        setTimeout(() => {
-            getRandomTrack()
-        }, isInitializing ? UNIVERSAL_RETRY_TIMEOUT : GET_RANDOM_TRACK_TIMEOUT)
-
-    }).catch(e => {
-        console.log(e)
+    } catch (error) {
+        console.error('Error in getRandomTrack:', error)
         setTimeout(() => {
             getRandomTrack()
         }, UNIVERSAL_RETRY_TIMEOUT)
-    })
-}
-
-const getTrackMetadata = (fileName) => {
-    const q = trackQueue.find(t => t.fileName == fileName)
-    if (!q) return null
-    return tracks.find(t => t.id == q.postId) || null
+    }
 }
 
 exports.run = async () => {
-    checkDirs()
-    loadPosts()
-    loadQueue()
 
     connect().then(async () => {
         await getTracksFromChannel(process.env.CHANNEL)
@@ -422,27 +414,4 @@ exports.run = async () => {
 
     deleteUnusedTracks()
 
-}
-
-exports.getQueueLength = () => trackQueue.filter(t => t.isScheduled == false).length
-exports.getNextTrack = () => trackQueue.find(t => t.isScheduled == false)
-exports.getTrackTitle = (fileName) => getTrackFullName(getTrackMetadata(fileName))
-exports.scheduleTrack = (fileName) => {
-    console.log(fileName)
-    const entry = trackQueue.find(t => t.fileName === fileName)
-    console.log(entry)
-    if (entry) {
-        entry.isScheduled = true
-        saveQueue()
-        return true
-    }
-    return false
-}
-exports.markTrackAsPlayed = (fileName) => {
-    const entry = trackQueue.find(t => t.fileName === fileName)
-    if (entry) {
-        entry.isPlayed = true
-        saveQueue()
-        return true
-    }
 }

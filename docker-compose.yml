@@ -1,15 +1,85 @@
 services:
-  # postgres:
-  #   image: postgres:17
-  #   container_name: cor_postgres
+  postgres:
+    image: postgres:15-alpine
+    container_name: cor_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: radio
+      POSTGRES_PASSWORD: radio_pass
+      POSTGRES_DB: coldorbit
+      PGDATA: /var/lib/postgresql/data/pgdata
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.3'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U radio -d coldorbit" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: >
+      postgres
+      -c shared_buffers=32MB
+      -c effective_cache_size=64MB
+      -c maintenance_work_mem=16MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=4MB
+      -c default_statistics_target=100
+    volumes:
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cornet
+
+  # backup:
+  #   image: alpine
+  #   container_name: cor_backup
   #   restart: unless-stopped
-  #   environment:
-  #     POSTGRES_USER: radio
-  #     POSTGRES_PASSWORD: radio_pass
-  #     POSTGRES_DB: coldorbit
   #   volumes:
-  #     - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./backups:/backups
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 128M
+  #         cpus: '0.3'
+  #   command: >
+  #     sh -c '
+  #       apk add postgresql-client &&
+  #       while true; do
+  #         pg_dump -h postgres -U radio -d coldorbit > /backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+  #         sleep 86400
+  #       done
+  #     '
+  #   networks:
+  #     - cornet 
+
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   networks:
+  #     - cornet
+
+  # gateway:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/gateway/Dockerfile
+  #   container_name: cor_gateway
+  #   restart: unless-stopped
+  #   env_file: .env
+  #   ports:
+  #     - "3000:3000"
+  #   healthcheck:
+  #     test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   volumes:
+  #     - ./shared/music:/app/music
   #   networks:
   #     - cornet
 
@@ -20,35 +90,66 @@ services:
     container_name: cor_tgfetch
     restart: unless-stopped
     env_file: .env
-    ports:
-      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - MAX_MEMORY=64
+      - SHARED_DB_DIR=/app/db
+    deploy:
+      resources:
+        limits:
+          memory: 96M
+          cpus: '0.3'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: [ "CMD", "curl", "-f", "http://localhost:4001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     volumes:
       - ./shared/music:/app/music
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - ./shared/db:/app/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - cornet
 
   rotation:
-    build: 
+    build:
       context: .
       dockerfile: docker/rotation/Dockerfile
     container_name: cor_rotation
     restart: unless-stopped
     env_file: .env
     environment:
+      - NODE_ENV=production
+      - MAX_MEMORY=48
       - TG_FETCH_URL=http://tgfetch:4001
       - LIQUIDSOAP_HOST=liquidsoap
       - SHARED_MUSIC_DIR=/app/music
-    ports:
-      - "4002:4002"
+      - SHARED_DB_DIR=/app/db
+      - LIQUIDSOAP_HEALTH_URL=http://liquidsoap:4000/health
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.2'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     volumes:
       - ./shared/music:/app/music
+      - ./shared/db:/app/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       - tgfetch
       - liquidsoap
@@ -56,20 +157,71 @@ services:
     networks:
       - cornet
 
+  # scrobbler:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/scrobbler/Dockerfile
+  #   container_name: cor_scrobbler
+  #   restart: unless-stopped
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/coldorbit
+  #     - SPRING_DATASOURCE_USERNAME=radio
+  #     - SPRING_DATASOURCE_PASSWORD=radio_pass
+  #     - JAVA_OPTS=-Xmx128m -Xms64m -XX:MaxRAM=160m
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 192M # Java требует больше overhead
+  #         cpus: '0.4'
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - cornet
+
+  # rating:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/rating/Dockerfile
+  #   container_name: cor_rating
+  #   restart: unless-stopped
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/coldorbit
+  #     - SPRING_DATASOURCE_USERNAME=radio
+  #     - SPRING_DATASOURCE_PASSWORD=radio_pass
+  #     - JAVA_OPTS=-Xmx128m -Xms64m -XX:MaxRAM=160m
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 192M
+  #         cpus: '0.4'
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - cornet
+
   liquidsoap:
-    build: 
+    build:
       context: .
       dockerfile: docker/liquidsoap/Dockerfile
     container_name: cor_liquidsoap
     restart: unless-stopped
     environment:
+      - NODE_ENV=production
+      - MAX_MEMORY=128
       - ICECAST_HOST=icecast
       - ICECAST_PORT=8000
-      - ICECAST_PASSWORD=hackme
       - ICECAST_MOUNT=radio.mp3
-    ports:
-      - "4000:4000"
-      - "1234:1234"
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     volumes:
       - ./shared/music:/app/music
     depends_on:
@@ -77,44 +229,24 @@ services:
     networks:
       - cornet
 
-  # scrobbler:
-  #   build: ./docker/scrobbler
-  #   container_name: cor_scrobbler
-  #   restart: unless-stopped
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/coldorbit
-  #     - SPRING_DATASOURCE_USERNAME=radio
-  #     - SPRING_DATASOURCE_PASSWORD=radio_pass
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - cornet
-
-  # rating:
-  #   build: ./docker/rating
-  #   container_name: cor_rating
-  #   restart: unless-stopped
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/coldorbit
-  #     - SPRING_DATASOURCE_USERNAME=radio
-  #     - SPRING_DATASOURCE_PASSWORD=radio_pass
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - cornet
-
   icecast:
     image: moul/icecast
     container_name: cor_icecast
     restart: unless-stopped
     env_file: .env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000" ]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 40s
     ports:
       - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.2'
     networks:
       - cornet
 
