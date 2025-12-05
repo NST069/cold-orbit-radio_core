@@ -84,6 +84,14 @@ class QueueRepository {
         return !!result;
     }
 
+    /** 
+     * Возвращает трек по trackId
+     */
+    async getTrackById(trackId) {
+        return await TrackQueue.query()
+            .where('track_id', trackId);
+    }
+
     /**
      * Получает список всех файлов в активной очереди
      */
@@ -104,6 +112,15 @@ class QueueRepository {
         return await TrackQueue.query()
             .whereIn('status', ['played', 'failed'])
             .delete();
+    }
+
+    /**
+     * Сбрасывает статус запланированных треков
+     */
+    async clearScheduled() {
+        return await TrackQueue.query()
+            .whereIn('status', ['scheduled', 'playing'])
+            .patch({ status: 'pending' });
     }
 }
 

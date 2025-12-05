@@ -19,6 +19,7 @@ CREATE TABLE tracks (
     id SERIAL PRIMARY KEY,
     telegram_id BIGINT UNIQUE NOT NULL, -- msg.id из Telegram
     title VARCHAR(500) NOT NULL,
+    performer VARCHAR(500) NOT NULL,
     file_name VARCHAR(500) NOT NULL,
     duration INTEGER NOT NULL,
     file_size BIGINT,

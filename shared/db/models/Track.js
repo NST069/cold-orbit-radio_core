@@ -22,6 +22,7 @@ class Track extends BaseModel {
         id: { type: 'integer' },
         telegram_id: { type: 'integer' },
         title: { type: 'string', maxLength: 500 },
+        performer: { type: 'string', maxLength: 500 },
         file_name: { type: 'string', maxLength: 500 },
         duration: { type: 'integer' },
         file_size: { type: 'integer' },
@@ -52,7 +53,7 @@ class Track extends BaseModel {
           to: 'artists.id'
         }
       },
-      
+
       queueEntries: {
         relation: BaseModel.HasManyRelation,
         modelClass: TrackQueue,
@@ -61,7 +62,7 @@ class Track extends BaseModel {
           to: 'track_queue.track_id'
         }
       },
-      
+
       playHistory: {
         relation: BaseModel.HasManyRelation,
         modelClass: PlayHistory,
@@ -70,7 +71,7 @@ class Track extends BaseModel {
           to: 'play_history.track_id'
         }
       },
-      
+
       ratings: {
         relation: BaseModel.HasManyRelation,
         modelClass: TrackRating,

@@ -64,24 +64,31 @@ services:
   #   networks:
   #     - cornet
 
-  # gateway:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/gateway/Dockerfile
-  #   container_name: cor_gateway
-  #   restart: unless-stopped
-  #   env_file: .env
-  #   ports:
-  #     - "3000:3000"
-  #   healthcheck:
-  #     test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   volumes:
-  #     - ./shared/music:/app/music
-  #   networks:
-  #     - cornet
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/gateway/Dockerfile
+    container_name: cor_gateway
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SHARED_PATH: "/app/music"
+      MOUNT_POINT: "/radio.mp3"
+      TGFETCH_URL: "http://tgfetch:4001"
+      ROTATION_URL: "http://rotation:4002"
+      LIQUIDSOAP_URL: "http://liquidsoap:4000"
+      ICECAST_URL: "http://icecast:8000"
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./shared/music:/app/music
+    networks:
+      - cornet
 
   tgfetch:
     build:

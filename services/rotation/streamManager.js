@@ -4,6 +4,7 @@ const { sendCommand, waitForTelnet } = require("./util/LiquidSoapClient")
 
 require('dotenv').config({ path: path.resolve(__dirname, "../../.env") })
 
+const TrackRepository = require(path.resolve(process.env.SHARED_DB_DIR, "repositories/TrackRepository"))
 const QueueRepository = require(path.resolve(process.env.SHARED_DB_DIR, "repositories/QueueRepository"))
 
 const MUSIC_DIRECTORY = process.env.SHARED_MUSIC_DIR || path.resolve(__dirname, "../tgfetch/_td_files", "music")
@@ -55,12 +56,14 @@ const checkTrack = async () => {
                 if (currentTrack && trackNow !== currentTrack) {
                     await QueueRepository.updateQueueStatus(currentTrack, "played")
                     const nextTrack = await QueueRepository.getNextTrack()
+                    if (!nextTrack) throw new Error("nextTrack is null")
                     pushTrackToLiquidSoap(nextTrack.file_name)
                 }
                 currentTrack = trackNow
             }
             else {
                 const nextTrack = await QueueRepository.getNextTrack()
+                if (!nextTrack) throw new Error("nextTrack is null")
                 pushTrackToLiquidSoap(nextTrack.file_name)
             }
         }
@@ -99,6 +102,7 @@ exports.init = async () => {
                 remoteLen = remoteLenRaw
             }
             if (remoteLen === 0) {
+                await QueueRepository.clearScheduled()
                 const nextTrack = await QueueRepository.getNextTrack()
                 if (nextTrack) {
                     console.log('[System] Pushing persisted next track to Liquidsoap:', nextTrack.file_name)
@@ -112,4 +116,15 @@ exports.init = async () => {
 
     checkTrack()
 
+}
+
+exports.getNowPlaying = async () => {
+
+    let trackFileName = await sendCommand("coldorbit.current").then(res => {
+        if (!res) return ""
+        const idx = Math.max(res.lastIndexOf('/'), res.lastIndexOf('\\'))
+        return res.substring(idx + 1)
+    }).catch(e => console.log(e))
+
+    return await TrackRepository.findByQueueFileName(trackFileName)
 }

@@ -84,6 +84,7 @@ const getTracksFromChannel = async (channelUsername) => {
                         telegram_id: msg.id,
                         title: audioAttr.title || 'Untitled',
                         performer: audioAttr.performer || 'Unknown',
+                        performerString: audioAttr.performer,
                         caption: content.caption?.text || null,
                         file_name: audioAttr.file_name || `${audioAttr.title || 'track'}.mp3`,
                         duration: audioAttr.duration || 0,
@@ -414,4 +415,10 @@ exports.run = async () => {
 
     deleteUnusedTracks()
 
+}
+
+exports.getCover = async (trackId) => {
+    if (!trackId) return
+    let track = await QueueRepository.getTrackById(trackId)
+    return track[0].cover_file_name
 }

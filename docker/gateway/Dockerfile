@@ -1,12 +1,12 @@
-FROM node:22-alpine
+FROM node:22-slim
 
 WORKDIR /app
 
-RUN apk add --no-cache postgresql-client
+RUN apt-get update
 
-COPY package*.json ./
+COPY services/gateway/package*.json ./
 RUN npm install --omit=dev
+COPY services/gateway/ .
 
-COPY . .
-
-CMD ["sh", "-c", "npm run db:migrate && node server.js"]
+EXPOSE 3000
+CMD ["node", "server.js"]

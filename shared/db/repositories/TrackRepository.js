@@ -8,7 +8,7 @@ class TrackRepository {
      * Создает трек и связывает артистов
      */
     async createTrackWithArtists(trackData) {
-        const { performer, ...trackFields } = trackData;
+        const { performerString, ...trackFields } = trackData;
 
         return await db.transaction(async trx => {
             // Создаем или находим трек
@@ -22,8 +22,8 @@ class TrackRepository {
             }
 
             // Парсим и связываем артистов через DB функцию
-            if (performer) {
-                await trx.raw('SELECT parse_and_link_artists(?, ?)', [track.id, performer]);
+            if (performerString) {
+                await trx.raw('SELECT parse_and_link_artists(?, ?)', [track.id, performerString]);
             }
 
             return track;
@@ -102,6 +102,22 @@ class TrackRepository {
         return await Track.query()
             .findById(id)
             .withGraphFetched('artists');
+    }
+
+    /**
+     * Находит трек по названию файла в очереди
+     */
+    async findByQueueFileName(queueFileName) {
+        return await Track.query()
+            .select('tracks.*')
+            .whereExists(
+                TrackQueue.query()
+                    .select(1)
+                    .whereColumn('track_queue.track_id', 'tracks.id')
+                    .where('track_queue.file_name', queueFileName)
+            )
+            .withGraphFetched('artists')
+            .first();
     }
 }
 
