@@ -15,15 +15,15 @@ const CHECK_TRACK_TIMEOUT = 60 * 1000                       //1 min
 const CHECK_TRACK_TIMEOUT_SHORT = 5 * 1000                  //5 sec
 const UNIVERSAL_RETRY_TIMEOUT = 30 * 1000                   //30 sec
 
-const pushTrackToLiquidSoap = async (filename) => {
+const pushTrackToLiquidSoap = async (queueItem) => {
     try {
-        const fullPath = path.join(MUSIC_DIRECTORY, filename)
+        const fullPath = path.join(MUSIC_DIRECTORY, queueItem.file_name)
         const liquidsoapPath = fullPath.replace(/\\\\/g, "/").replace(/\\/g, "/")
         await sendCommand(`coldorbit.push ${liquidsoapPath}`)
-        await QueueRepository.updateQueueStatus(filename, "scheduled")
+        await QueueRepository.updateQueueStatus(queueItem.file_name, "scheduled")
     } catch (e) {
-        console.error(`Error pushing track to Liquidsoap: ${filename}`, e)
-        await QueueRepository.updateQueueStatus(filename, "failed")
+        console.error(`Error pushing track to Liquidsoap: ${queueItem.file_name}`, e)
+        await QueueRepository.updateQueueStatus(queueItem.file_name, "failed")
     }
 
 }
@@ -57,14 +57,14 @@ const checkTrack = async () => {
                     await QueueRepository.updateQueueStatus(currentTrack, "played")
                     const nextTrack = await QueueRepository.getNextTrack()
                     if (!nextTrack) throw new Error("nextTrack is null")
-                    pushTrackToLiquidSoap(nextTrack.file_name)
+                    pushTrackToLiquidSoap(nextTrack)
                 }
-                currentTrack = trackNow
+                currentTrack = trackNow || ""
             }
             else {
                 const nextTrack = await QueueRepository.getNextTrack()
                 if (!nextTrack) throw new Error("nextTrack is null")
-                pushTrackToLiquidSoap(nextTrack.file_name)
+                pushTrackToLiquidSoap(nextTrack)
             }
         }
         else console.log("Queue is empty. Waiting...")
@@ -106,7 +106,7 @@ exports.init = async () => {
                 const nextTrack = await QueueRepository.getNextTrack()
                 if (nextTrack) {
                     console.log('[System] Pushing persisted next track to Liquidsoap:', nextTrack.file_name)
-                    await pushTrackToLiquidSoap(nextTrack.file_name).catch(e => console.log(e))
+                    await pushTrackToLiquidSoap(nextTrack).catch(e => console.log(e))
                 }
             }
         }

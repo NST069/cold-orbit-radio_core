@@ -1,5 +1,7 @@
 FROM node:22-slim
 
+ENV NODE_OPTIONS="--max-old-space-size=32"
+
 WORKDIR /app
 
 RUN apt-get update

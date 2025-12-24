@@ -17,7 +17,7 @@ const FFMPEG_PATH = os.platform() === 'win32'
     : 'ffmpeg'
 
 const client = tdl.createClient({
-    apiId: process.env.API_ID,
+    apiId: parseInt(process.env.API_ID),
     apiHash: process.env.API_HASH,
 })
 
@@ -137,12 +137,12 @@ const getTrackCredits = (track) => {
     }
 
     const hasTitle = track.title && track.title.trim().length > 0
-    const hasArtists = track.artists && tracingChannel.artists.length > 0
+    const hasArtists = track.artists && track.artists.length > 0
         && track.artists.map(artist => artist.name).join(', ').trim().length > 0
 
     if (hasTitle || hasArtists) {
         const performer = hasArtists ? track.artists.map(artist => artist.name).join(', ').trim() : '<Неизвестен>'
-        const title = hasTitle ? rack.title.trim() : '<Без названия>'
+        const title = hasTitle ? track.title.trim() : '<Без названия>'
         console.log("meta", performer, title)
         return { author: performer, title: title }
     }
@@ -172,49 +172,71 @@ const fixTrackMetadata = async (fileId, fileName) => {
 
         const { author, title } = getTrackCredits(track)
 
-        if (track.performer !== author || track.title !== title) {
-            console.log(`Updating metadata for ${fileName}: ${author} - ${title}`)
+        console.log(`Updating metadata for ${fileName}: ${author} - ${title}`)
 
-            const tempPath = path.join(LINUX_MUSIC_DIRECTORY, fileName.substring(0, fileName.lastIndexOf("."))) + '_tmp' + fileName.substring(fileName.lastIndexOf("."))
-            const filePath = path.join(LINUX_MUSIC_DIRECTORY, fileName)
+        const tempPath = path.join(LINUX_MUSIC_DIRECTORY, fileName.substring(0, fileName.lastIndexOf("."))) + '_tmp' + fileName.substring(fileName.lastIndexOf("."))
+        const filePath = path.join(LINUX_MUSIC_DIRECTORY, fileName)
 
-            const args = [
-                '-i', filePath,
-                '-c', 'copy',
-                '-metadata', `title=${title}`,
-                '-metadata', `artist=${author}`,
-                '-y',
-                tempPath
-            ]
+        const isMp3 = fileName.toLowerCase().endsWith('.mp3')
+        const duration = Math.max(30, Math.floor(track.duration || 0))
 
-            const child = spawn(FFMPEG_PATH, args, {
-                stdio: ["ignore", "pipe", "pipe"],
-            })
+        const args = [
+            '-i', filePath,
+            '-c', 'copy',
+            '-metadata', `title=${title}`,
+            '-metadata', `artist=${author}`,
+            '-metadata', `length=${duration}`,
+            '-metadata', `duration=${duration}`,
+            '-y',
+            tempPath
+        ]
 
-            let stderr = ''
-            child.stderr.on('data', (chunk) => (stderr += chunk.toString()))
+        if (isMp3) {
+            const durationMs = duration * 1000
+            const minutes = Math.floor(duration / 60)
+            const seconds = Math.floor(duration % 60)
+            const timeTag = `${minutes}:${seconds.toString().padStart(2, '0')}`
 
-            child.on('error', (err) => {
-                console.error('[FFMpeg spawn error]', err && err.message ? err.message : err)
-            })
-
-            child.on("close", async (code) => {
-                if (code === 0) {
-                    try {
-                        fs.unlink(filePath, () => { })
-                        fs.rename(tempPath, filePath, () => { })
-
-                    } catch (err) {
-                        console.log(`Error replacing temp file: ${err}`)
-                    }
-                    console.log(`Metadata Updated: ${fileName}`)
-                } else {
-                    console.error(`Error updating metadata for ${fileName}: ${stderr.trim() || 'unknown error'}`)
-                }
-            })
+            args.push(
+                '-id3v2_version', '3',
+                '-metadata', `TLEN=${durationMs}`,
+                '-metadata', `TIME=${timeTag}`,
+                '-metadata', `DURATION=${duration}`,
+                '-metadata', `liq_duration=${duration}`,
+                '-write_id3v1', '1'
+            )
         } else {
-            console.log(`${fileName} metadata is valid`)
+            args.push(
+                '-metadata', `DURATION=${duration}`,
+                '-metadata', `liq_duration=${duration}`,
+            )
         }
+
+        const child = spawn(FFMPEG_PATH, args, {
+            stdio: ["ignore", "pipe", "pipe"],
+        })
+
+        let stderr = ''
+        child.stderr.on('data', (chunk) => (stderr += chunk.toString()))
+
+        child.on('error', (err) => {
+            console.error('[FFMpeg spawn error]', err && err.message ? err.message : err)
+        })
+
+        child.on("close", async (code) => {
+            if (code === 0) {
+                try {
+                    fs.unlink(filePath, () => { })
+                    fs.rename(tempPath, filePath, () => { })
+
+                } catch (err) {
+                    console.log(`Error replacing temp file: ${err}`)
+                }
+                console.log(`Metadata Updated: ${fileName}`)
+            } else {
+                console.error(`Error updating metadata for ${fileName}: ${stderr.trim() || 'unknown error'}`)
+            }
+        })
     } catch (error) {
         console.error(`Error in fixTrackMetadata for file ${fileName}:`, error)
     }
@@ -222,7 +244,6 @@ const fixTrackMetadata = async (fileId, fileName) => {
 
 const downloadFile = async (remoteFileId, fileType = "fileTypeAudio", attempt = 1) => {
     try {
-
         const file = await client.invoke({
             "@type": "getRemoteFile",
             remote_file_id: remoteFileId,

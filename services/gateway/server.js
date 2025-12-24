@@ -12,7 +12,7 @@ app.use("/api", apiRoutes)
 app.use('/api-docs', swaggerSetup.serve, swaggerSetup.setup)
 
 app.use((req, res) => {
-    res.status(404).hateoas({
+    res.status(404).locals.hateoas({
         error: "Page not found",
         requested: req.originalUrl
     }, {})

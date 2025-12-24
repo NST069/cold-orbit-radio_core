@@ -92,9 +92,9 @@ const { getStationInfo } = require("../../controllers/stationInfoController")
  *                       example: null
  *                       description: Track start timestamp (if available)
  */
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
 
-    const stationInfo = getStationInfo()
+    const stationInfo = await getStationInfo()
     stationInfo.url.replace("localhost", req.hostname + "8000")
 
     const info = {
@@ -124,7 +124,7 @@ router.get("/", (req, res) => {
             type: "application/json"
         }
     }
-    res.hateoas(info, links)
+    res.locals.hateoas(info, links)
 })
 
 module.exports = router

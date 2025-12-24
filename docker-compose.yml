@@ -8,6 +8,7 @@ services:
       POSTGRES_PASSWORD: radio_pass
       POSTGRES_DB: coldorbit
       PGDATA: /var/lib/postgresql/data/pgdata
+      PGOPTIONS: "-c work_mem=4MB -c maintenance_work_mem=8MB"
     deploy:
       resources:
         limits:
@@ -20,13 +21,7 @@ services:
       retries: 5
       start_period: 30s
     command: >
-      postgres
-      -c shared_buffers=32MB
-      -c effective_cache_size=64MB
-      -c maintenance_work_mem=16MB
-      -c checkpoint_completion_target=0.9
-      -c wal_buffers=4MB
-      -c default_statistics_target=100
+      postgres -c shared_buffers=32MB -c effective_cache_size=64MB -c maintenance_work_mem=16MB -c checkpoint_completion_target=0.9 -c wal_buffers=4MB -c default_statistics_target=100
     volumes:
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
@@ -78,6 +73,11 @@ services:
       ROTATION_URL: "http://rotation:4002"
       LIQUIDSOAP_URL: "http://liquidsoap:4000"
       ICECAST_URL: "http://icecast:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 80M
+          cpus: '0.3'
     ports:
       - "3000:3000"
     healthcheck:
@@ -104,7 +104,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 96M
+          memory: 80M
           cpus: '0.3'
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:4001/health" ]
@@ -144,7 +144,7 @@ services:
           memory: 64M
           cpus: '0.2'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4002/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:4002/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -163,27 +163,6 @@ services:
       - icecast
     networks:
       - cornet
-
-  # scrobbler:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/scrobbler/Dockerfile
-  #   container_name: cor_scrobbler
-  #   restart: unless-stopped
-  #   environment:
-  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/coldorbit
-  #     - SPRING_DATASOURCE_USERNAME=radio
-  #     - SPRING_DATASOURCE_PASSWORD=radio_pass
-  #     - JAVA_OPTS=-Xmx128m -Xms64m -XX:MaxRAM=160m
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 192M # Java требует больше overhead
-  #         cpus: '0.4'
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - cornet
 
   # rating:
   #   build:
@@ -207,32 +186,64 @@ services:
   #     - cornet
 
   liquidsoap:
-    build:
-      context: .
-      dockerfile: docker/liquidsoap/Dockerfile
+    image: savonet/liquidsoap:v2.1.3
     container_name: cor_liquidsoap
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - MAX_MEMORY=128
-      - ICECAST_HOST=icecast
-      - ICECAST_PORT=8000
-      - ICECAST_MOUNT=radio.mp3
     deploy:
       resources:
         limits:
-          memory: 192M
-          cpus: '0.5'
+          memory: 160M
+          cpus: '0.4'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:4000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
     volumes:
       - ./shared/music:/app/music
+      - ./shared/liquidsoap:/app/liquidsoap
+    command: >
+      liquidsoap /app/liquidsoap/radio.liq
     depends_on:
       - icecast
+    networks:
+      - cornet
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  liquidsoap-generator:
+    build:
+      context: .
+      dockerfile: docker/liquidsoap-generator/Dockerfile
+    container_name: cor_liquidsoap-generator
+    restart: no
+    environment:
+      - NODE_ENV=production
+      - MAX_MEMORY=128
+      - ICECAST_HOST=icecast
+      - ICECAST_PORT=8000
+      - ICECAST_MOUNT=radio.mp3
+      - LIBREFM_USER=${LIBREFM_USER}
+      - LIBREFM_PASSWORD=${LIBREFM_PASSWORD}
+      - LIQUIDSOAP_SCRIPT_PATH=/app/liquidsoap/
+      - WEBHOOK_URL=http://rotation:4002/api/liquidsoap/webhook
+    command: >
+      sh -c "
+        mkdir -p /app/liquidsoap/logs &&
+        node server.js
+      "
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.3'
+    volumes:
+      - ./shared/liquidsoap:/app/liquidsoap
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - cornet
 
@@ -259,6 +270,7 @@ services:
 
 volumes:
   postgres_data:
+
 
 networks:
   cornet:

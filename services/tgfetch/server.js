@@ -12,7 +12,7 @@ app.get("/health", (req, res) =>
     res.json({ status: "ok" }))
 
 app.get("/cover", async (req, res) => {
-    cover = await getCover(req.query.trackId)
+    const cover = await getCover(req.query.trackId)
     res.json({ fileName: cover })
 })
 
