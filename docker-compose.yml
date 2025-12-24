@@ -69,6 +69,11 @@ services:
       ROTATION_URL: "http://rotation:4002"
       LIQUIDSOAP_URL: "http://liquidsoap:4000"
       ICECAST_URL: "http://icecast:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 80M
+          cpus: '0.3'
     ports:
       - "3000:3000"
     healthcheck:
