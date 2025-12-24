@@ -1,0 +1,29 @@
+const services = require("../services")
+
+exports.getNowPlaying = async (req, res) => {
+    try {
+        const track = await services.getNowPlaying()
+
+        const links = {}
+
+        if (track && track.telegram_cover_id) links.cover = {
+            href: `${req.protocol}://${req.get("host")}/cover/${track.id}`,
+            method: "GET",
+            type: "image/jpeg"
+        }
+
+        res.hateoas({
+            ...track,
+            fetchedAt: new Date().toISOString()
+        }, links)
+    }
+    catch (error) {
+        res.hateoas({
+            status: 'OFFLINE',
+            message: 'Service Unavailable'
+        }, {
+            retry: { href: req.originalUrl, method: 'GET' },
+            status: { href: '/api/v1/health', method: 'GET' }
+        });
+    }
+}

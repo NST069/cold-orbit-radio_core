@@ -1,0 +1,10 @@
+{
+    "restartable": "rs",
+    "ignore": [
+        "_td_database/*",
+        "_td_files/*",
+        "temp/*",
+        "files/*"
+    ],
+    "verbose": false
+}
