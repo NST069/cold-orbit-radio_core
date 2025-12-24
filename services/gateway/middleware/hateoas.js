@@ -1,7 +1,7 @@
 
 exports.hateoasMiddleware = (req, res, next) => {
 
-    res.hateoas = (data, links = {}) => {
+    res.locals.hateoas = (data, links = {}) => {
         const baseUrl = `${req.protocol}://${req.get("host")}`
 
         const selfLink = {

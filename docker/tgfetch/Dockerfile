@@ -1,5 +1,7 @@
 FROM node:22-slim
 
+ENV NODE_OPTIONS="--max-old-space-size=48"
+
 WORKDIR /app
 
 COPY services/tgfetch/package*.json ./

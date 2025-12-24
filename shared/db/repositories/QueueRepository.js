@@ -32,7 +32,7 @@ class QueueRepository {
             // Берем только file_name и id
             const nextTrack = await trx('track_queue')
                 .where('status', 'pending')
-                .select('id', 'file_name')
+                .select('id', 'file_name', 'track_id')
                 .orderBy('created_at', 'asc')
                 .forUpdate()
                 .skipLocked()
@@ -42,7 +42,7 @@ class QueueRepository {
                 return null;
             }
 
-            return nextTrack; // { id, file_name }
+            return nextTrack; // { id, file_name, track_id }
         });
     }
 

@@ -10,6 +10,7 @@ exports.getStationInfo = async (req, res) => {
             ...response,
             fetchedAt: new Date().toISOString()
         }, links)
+        return response
     }
     catch (error) {
         console.log(error)

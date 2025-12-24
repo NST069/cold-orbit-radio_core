@@ -8,8 +8,8 @@ const SHARED_PATH = process.env.SHARED_PATH || '/shared/music'
 
 exports.getCover = async (req, res) => {
     try {
-        trackId = req.params.trackId
-        coverInfo = await services.getTrackCover(trackId)
+        const trackId = req.params.trackId
+        const coverInfo = await services.getTrackCover(trackId)
 
         if (!coverInfo || !coverInfo.fileName) {
             return res.status(404).hateoas({
@@ -18,7 +18,7 @@ exports.getCover = async (req, res) => {
             })
         }
 
-        coverFilePath = path.join(SHARED_PATH, coverInfo.fileName)
+        const coverFilePath = path.join(SHARED_PATH, coverInfo.fileName)
 
         try {
             await fs.access(coverFilePath)

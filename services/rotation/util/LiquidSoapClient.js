@@ -1,5 +1,7 @@
 const net = require("net")
 
+const LIQUIDSOAP_HOST = process.env.LIQUIDSOAP_HOST || "127.0.0.1"
+
 /**
  * Отправляет команду Liquidsoap через telnet-интерфейс.
  * Открывает соединение, ждёт ответ, закрывает.
@@ -12,7 +14,6 @@ const net = require("net")
  * @returns {Promise<string>} - текст ответа без 'END'
  */
 exports.sendCommand = (cmd, options = {}) => {
-  const LIQUIDSOAP_HOST = process.env.LIQUIDSOAP_HOST || "127.0.0.1"
 
   const {
     host = LIQUIDSOAP_HOST,

@@ -14,7 +14,7 @@ const REQUEST_TIMEOUT = 5000            //5s
 const callService = async (serviceName, endpoint, options = {}) => {
     const baseUrl = SERVICES[serviceName]
     if (!baseUrl) throw new Error("Service unavailiable")
-    
+
     try {
         const response = await axios({
             url: `${baseUrl}/${endpoint}`,
@@ -38,7 +38,7 @@ let cache = {
     ttl: REQUEST_TIMEOUT
 }
 
-getIcecastData = async () => {
+const getIcecastData = async () => {
     const now = Date.now()
     if (cache.data && (now - cache.timestamp) < cache.ttl) {
         return cache.data;
@@ -46,7 +46,7 @@ getIcecastData = async () => {
 
     try {
 
-        icecast_data = await callService("icecast", "status-json.xsl")
+        const icecast_data = await callService("icecast", "status-json.xsl")
 
         cache.data = icecast_data
         cache.timestamp = now
@@ -58,14 +58,14 @@ getIcecastData = async () => {
     }
 }
 
-getStationInfo = async () => {
+const getStationInfo = async () => {
     const icecastData = await getIcecastData()
 
     if (!icecastData || !icecastData.icestats) {
         return null;
     }
 
-    const source = icecastData.icestats.source
+    let source = icecastData.icestats.source
     if (Array.isArray(source)) {
         source = source.find(s =>
             s.listenurl && s.listenurl.includes(MOUNT_POINT)
@@ -97,7 +97,7 @@ getStationInfo = async () => {
     }
 }
 
-listenersNow = async () => {
+const listenersNow = async () => {
     const stationInfo = await getStationInfo()
     return { listeners: stationInfo.listeners || 0 }
 }
