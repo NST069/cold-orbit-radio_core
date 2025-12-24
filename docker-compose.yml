@@ -203,7 +203,7 @@ services:
       dockerfile: docker/liquidsoap-generator/Dockerfile
     container_name: cor_liquidsoap-generator
     restart: no
-    mem_limit: 128m
+    mem_limit: 256m
     cpus: 0.3
     environment:
       NODE_ENV: production
