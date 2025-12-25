@@ -1,4 +1,5 @@
 const express = require("express")
+const cors = require("cors")
 const app = express()
 
 const PORT = 3000
@@ -7,6 +8,7 @@ const apiRoutes = require("./routes")
 const { hateoasMiddleware } = require("./middleware/hateoas")
 const swaggerSetup = require('./config/swagger')
 
+app.use(cors())
 app.use(hateoasMiddleware)
 app.use("/api", apiRoutes)
 app.use('/api-docs', swaggerSetup.serve, swaggerSetup.setup)
