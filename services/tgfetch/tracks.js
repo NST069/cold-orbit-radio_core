@@ -92,6 +92,16 @@ const getTracksFromChannel = async (channelUsername) => {
                         telegram_file_id: audioAttr.audio?.remote?.id || null,
                         telegram_cover_id: audioAttr.album_cover_thumbnail?.file?.remote?.id || null,
                     }
+                    try{
+                        const { author, title } = getTrackCredits(trackData)
+                        trackData.title_fixed = title
+                        trackData.performer_fixed = author
+                    }
+                    catch(error){
+                        console.error(`Error fixing track credits: `, error)
+                        trackData.title_fixed = trackData.title || 'Untitled'
+                        trackData.performer_fixed = trackData.author || 'Unknown'
+                    }
 
                     try {
                         const track = await TrackRepository.createTrackWithArtists(trackData)
@@ -131,7 +141,7 @@ const getTrackCredits = (track) => {
     if (track.caption) {
         const idx = track.caption.indexOf('\n')
         const firstLine = idx === -1 ? track.caption : track.caption.substring(0, idx)
-        const creds = firstLine.split(/( [–-] )/)
+        const creds = firstLine.split(/( [\-–—] )/)
         console.log("cap", creds)
         return { author: creds[0].trim(), title: creds[2].trim() }
     }
@@ -148,7 +158,7 @@ const getTrackCredits = (track) => {
     }
 
     if (track.fileName && track.fileName.lastIndexOf('.') !== -1) {
-        const creds = track.fileName.substring(0, track.fileName.lastIndexOf('.')).split(/( [–-] )/)
+        const creds = track.fileName.substring(0, track.fileName.lastIndexOf('.')).split(/( [\-–—] )/)
         console.log("file", creds)
         return { author: creds[0].trim(), title: creds[2].trim() }
     }

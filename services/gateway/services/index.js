@@ -98,11 +98,10 @@ const listenersNow = async () => {
 
 const nowPlaying = async () => {
     const track = await callService("rotation", "nowPlaying")
-    const trackName = track.caption.split(/( [–-] )/)
     return {
         id: track.id,
-        title: trackName[0],
-        performer: trackName[2],
+        title: track.title_fixed,
+        performer: track.performer_fixed,
         duration: track.duration,
         hasCover: track.telegram_cover_id ? true : false
     }

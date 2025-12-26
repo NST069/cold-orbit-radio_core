@@ -7,7 +7,7 @@ exports.getNowPlaying = async (req, res) => {
         const links = {}
 
         if (track && track.hasCover) links.cover = {
-            href: `${req.protocol}://${req.get("host")}/cover/${track.id}`,
+            href: `${req.protocol}://${req.get("host")}/api/v1/cover/${track.id}`,
             method: "GET",
             type: "image/jpeg"
         }
