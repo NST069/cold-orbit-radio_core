@@ -45,22 +45,10 @@ const { getStationInfo } = require("../../controllers/stationInfoController")
  *                   format: uri
  *                   example: "http://localhost:8000/radio.mp3"
  *                   description: Stream URL
- *                 bitrate:
- *                   type: integer
- *                   example: 128
- *                   description: Audio stream bitrate in kbps
- *                 format:
- *                   type: string
- *                   example: "audio/mpeg"
- *                   description: Audio format/codec
  *                 currentSong:
  *                   type: string
  *                   example: "No song playing"
  *                   description: Current playing song title
- *                 currentArtist:
- *                   type: string
- *                   example: "Unknown Artist"
- *                   description: Current playing artist name
  *                 listeners:
  *                   type: integer
  *                   example: 0
@@ -76,55 +64,7 @@ const { getStationInfo } = require("../../controllers/stationInfoController")
  *                   format: date-time
  *                   example: "Thu, 04 Dec 2025 16:39:59 +0000"
  *                   description: Stream start timestamp (RFC 2822 format)
- *                 nowPlaying:
- *                   type: object
- *                   description: Detailed now playing information
- *                   properties:
- *                     duration:
- *                       type: integer
- *                       nullable: true
- *                       example: null
- *                       description: Track duration in seconds (if available)
- *                     started:
- *                       type: string
- *                       format: date-time
- *                       nullable: true
- *                       example: null
- *                       description: Track start timestamp (if available)
  */
-router.get("/", async (req, res) => {
-
-    const stationInfo = await getStationInfo()
-    stationInfo.url.replace("localhost", req.hostname + "8000")
-
-    const info = {
-        ...stationInfo,
-        version: process.env.npm_package_version,
-        uptime: process.uptime(),
-        environment: process.env.NODE_ENV,
-        memory: process.memoryUsage(),
-        cpu: process.cpuUsage(),
-        connections: require('http').globalAgent.sockets.length
-    }
-
-    const links = {
-        nowPlaying: {
-            href: `${req.protocol}://${req.get("host")}/api/v1/now-playing`,
-            method: "GET",
-            type: "application/json"
-        },
-        listeners: {
-            href: `${req.protocol}://${req.get("host")}/api/v1/listeners`,
-            method: "GET",
-            type: "application/json"
-        },
-        health: {
-            href: `${req.protocol}://${req.get("host")}/api/v1/health`,
-            method: "GET",
-            type: "application/json"
-        }
-    }
-    res.locals.hateoas(info, links)
-})
+router.get("/", getStationInfo)
 
 module.exports = router

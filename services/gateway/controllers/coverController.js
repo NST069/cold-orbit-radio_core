@@ -12,7 +12,7 @@ exports.getCover = async (req, res) => {
         const coverInfo = await services.getTrackCover(trackId)
 
         if (!coverInfo || !coverInfo.fileName) {
-            return res.status(404).hateoas({
+            return res.status(404).locals.hateoas({
                 error: 'Cover Not Found',
                 trackId
             })
@@ -24,7 +24,7 @@ exports.getCover = async (req, res) => {
             await fs.access(coverFilePath)
         }
         catch {
-            return res.status(404).hateoas({ error: 'File Not Found' })
+            return res.status(404).locals.hateoas({ error: 'File Not Found' })
         }
 
         const mimeType = mime.lookup(coverFilePath) || 'application/octet-stream'
@@ -35,6 +35,6 @@ exports.getCover = async (req, res) => {
         res.sendFile(coverFilePath)
     } catch (error) {
         console.error('Error sending file:', error)
-        res.status(500).hateoas({ error: 'Error sending file' })
+        res.status(500).locals.hateoas({ error: 'Error sending file' })
     }
 }

@@ -11,8 +11,8 @@ app.get("/health", (req, res) =>
     res.json({ status: "ok" }))
 
 app.get("/nowPlaying", async (req, res) => {
-    track = await getNowPlaying()
-    res.json({ track })
+    let track = await getNowPlaying()
+    res.json(track)
 })
 
 app.on('unhandledRejection', (err) => console.error('unhandledRejection', err))

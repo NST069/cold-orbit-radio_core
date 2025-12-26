@@ -6,18 +6,19 @@ exports.getHealth = async (req, res) => {
 
         const links = {}
 
-        res.hateoas({
+        res.locals.hateoas({
             ...response,
             fetchedAt: new Date().toISOString()
         }, links)
     }
     catch (error) {
-        res.hateoas({
+        console.log(error)
+        res.locals.hateoas({
             status: 'OFFLINE',
             message: 'Service Unavailable'
         }, {
             retry: { href: req.originalUrl, method: 'GET' },
             status: { href: '/api/v1/health', method: 'GET' }
-        });
+        })
     }
 }

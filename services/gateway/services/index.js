@@ -81,29 +81,34 @@ const getStationInfo = async () => {
         description: source.server_description || 'Online Radio Station',
         genre: source.genre || 'Various',
         url: source.listenurl || `${SERVICES.icecast}${MOUNT_POINT}`,
-        bitrate: source.bitrate || 192,
-        format: source.server_type || 'audio/mpeg',
         currentSong: source.title || 'No song playing',
-        currentArtist: source.title?.split(" - ")[0].trim() || 'Unknown Artist',
         listeners: source.listeners || 0,
         peakListeners: source.listener_peak || 0,
         streamStart: source.stream_start || null,
-        nowPlaying: {
-            title: source.title?.split(" - ")[0].trim(),
-            artist: source.title?.split(" - ")[1].trim(),
-            duration: null,
-            started: null
-        }
     }
 }
 
 const listenersNow = async () => {
     const stationInfo = await getStationInfo()
-    return { listeners: stationInfo.listeners || 0 }
+    return {
+        listeners: stationInfo.listeners || 0,
+        peakListeners: stationInfo.peakListeners || 0
+    }
+}
+
+const nowPlaying = async () => {
+    const track = await callService("rotation", "nowPlaying")
+    return {
+        id: track.id,
+        title: track.title_fixed,
+        performer: track.performer_fixed,
+        duration: track.duration,
+        hasCover: track.telegram_cover_id ? true : false
+    }
 }
 
 module.exports = {
-    getNowPlaying: () => callService("rotation", "nowPlaying"),
+    getNowPlaying: () => nowPlaying(),
     getTrackCover: (trackId) => callService("tgfetch", "cover", { params: { trackId } }),
     getStationInfo: () => getStationInfo(),
     getListenersNow: () => listenersNow(),

@@ -18,10 +18,10 @@ const { getListenersNow } = require("../../controllers/listenersController")
  *             schema:
  *               type: object
  *               properties:
- *                 current:
+ *                 listeners:
  *                   type: integer
  *                   example: 150
- *                 peak_today:
+ *                 peakListeners:
  *                   type: integer
  *                   example: 320
  */

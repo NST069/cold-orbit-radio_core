@@ -6,24 +6,25 @@ exports.getNowPlaying = async (req, res) => {
 
         const links = {}
 
-        if (track && track.telegram_cover_id) links.cover = {
-            href: `${req.protocol}://${req.get("host")}/cover/${track.id}`,
+        if (track && track.hasCover) links.cover = {
+            href: `${req.protocol}://${req.get("host")}/api/v1/cover/${track.id}`,
             method: "GET",
             type: "image/jpeg"
         }
 
-        res.hateoas({
+        res.locals.hateoas({
             ...track,
             fetchedAt: new Date().toISOString()
         }, links)
     }
     catch (error) {
-        res.hateoas({
+        console.log(error)
+        res.locals.hateoas({
             status: 'OFFLINE',
             message: 'Service Unavailable'
         }, {
             retry: { href: req.originalUrl, method: 'GET' },
             status: { href: '/api/v1/health', method: 'GET' }
-        });
+        })
     }
 }

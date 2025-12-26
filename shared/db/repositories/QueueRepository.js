@@ -54,7 +54,7 @@ class QueueRepository {
 
         if (status === 'scheduled') {
             updateData.scheduled_at = new Date().toISOString();
-        } else if (status === 'played') {
+        } else if (status === 'playing') {
             updateData.played_at = new Date().toISOString();
         }
 
@@ -109,8 +109,10 @@ class QueueRepository {
      * Удаляет проигранные и битые треки из очереди
      */
     async cleanupTrackQueue() {
+		const cutoffDate = new Date(Date.now() - 30 * 60 * 1000);
         return await TrackQueue.query()
             .whereIn('status', ['played', 'failed'])
+			.orWhere('played_at', '<', cutoffDate)
             .delete();
     }
 
@@ -118,9 +120,15 @@ class QueueRepository {
      * Сбрасывает статус запланированных треков
      */
     async clearScheduled() {
-        return await TrackQueue.query()
-            .whereIn('status', ['scheduled', 'playing'])
-            .patch({ status: 'pending' });
+        return await TrackQueue.transaction(async (trx) => {
+			await TrackQueue.query(trx)
+			  .patch({ status: 'pending' })
+			  .where({ status: 'scheduled' });
+
+			await TrackQueue.query(trx)
+			  .patch({ status: 'played' })
+			  .where({ status: 'playing' });
+		});
     }
 }
 
