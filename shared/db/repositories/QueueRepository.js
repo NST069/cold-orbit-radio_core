@@ -89,7 +89,8 @@ class QueueRepository {
      */
     async getTrackById(trackId) {
         return await TrackQueue.query()
-            .where('track_id', trackId);
+            .where('track_id', trackId)
+            .first();
     }
 
     /**
@@ -112,7 +113,7 @@ class QueueRepository {
 		const cutoffDate = new Date(Date.now() - 30 * 60 * 1000);
         return await TrackQueue.query()
             .whereIn('status', ['played', 'failed'])
-			.orWhere('played_at', '<', cutoffDate)
+			.orWhere('scheduled_at', '<', cutoffDate)
             .delete();
     }
 
