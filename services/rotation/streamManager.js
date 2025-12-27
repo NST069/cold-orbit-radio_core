@@ -128,3 +128,17 @@ exports.getNowPlaying = async () => {
 
     return await TrackRepository.findByQueueFileName(trackFileName)
 }
+
+exports.changeTrackQueueStatusExternal = async(artist, title, status)=>{
+    try{
+        const track = await TrackRepository.findIdByTitleAndPerformer(artist, title)
+        console.log(track)
+        const currentTrack = await QueueRepository.getTrackById(track.id)
+        console.log(currentTrack)
+        let a = await QueueRepository.updateQueueStatus(currentTrack.file_name, status)
+        console.log(`Changed status for ${artist} - ${title}(id=${track.id}, queueId=${currentTrack.id}) to ${status}. Result: ${a}`)
+    }
+    catch(error){
+        console.error(`Error changing status for ${artist} - ${title} to ${status}`, error)
+    }
+}

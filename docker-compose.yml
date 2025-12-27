@@ -238,6 +238,7 @@ services:
       LIBREFM_USER: ${LIBREFM_USER}
       LIBREFM_PASSWORD: ${LIBREFM_PASSWORD}
       LIQUIDSOAP_SCRIPT_PATH: /app/liquidsoap/
+      WEBHOOK_URL: ${WEBHOOK_URL}
     command: >
       sh -c "
         mkdir -p /app/liquidsoap/logs &&

@@ -88,6 +88,15 @@ class TrackRepository {
     }
 
     /**
+     * Находит трек по нормализованным title, performer, возвращает Id
+     */
+    async findIdByTitleAndPerformer(performer, title) {
+        return await Track.query()
+            .findOne({ title_fixed: title, performer_fixed: performer })
+            .select('id');
+    }
+
+    /**
      * Получает общее количество треков в БД
      */
     async getTotalCount() {
