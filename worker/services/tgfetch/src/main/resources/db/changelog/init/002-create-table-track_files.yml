@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-table-track_files
+      author: NiKryukov
+      changes:
+        - createTable:
+            tableName: track_files
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_track_file_id
+              - column:
+                  name: track_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sha256
+                  type: text
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: telegram_file_unique_id
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: storage_key
+                  type: text
+              - column:
+                  name: file_size
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: mime_type
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: uploaded_at
+                  type: timestamp
+                  constraints:
+                    nullable: false

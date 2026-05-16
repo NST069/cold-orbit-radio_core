@@ -1,0 +1,35 @@
+server:
+  port: ${TGFETCH_PORT:8080}
+
+spring:
+  application.name: tgfetch
+  profiles:
+    default: ${APP_PROFILE:default}
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 3000
+      maximum-pool-size: 10
+      idle-timeout: 600000
+      validation-timeout: 5000
+      leak-detection-threshold: 2000
+      connection-test-query: SELECT 1
+      initialization-fail-timeout: 30000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yml
