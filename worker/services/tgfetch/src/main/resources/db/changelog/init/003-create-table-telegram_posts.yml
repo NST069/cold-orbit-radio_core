@@ -14,7 +14,7 @@ databaseChangeLog:
                     primaryKeyName: pk_post_id
               - column:
                   name: telegram_post_id
-                  type: bigint
+                  type: text
                   constraints:
                     nullable: false
               - column:

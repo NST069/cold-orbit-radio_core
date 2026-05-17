@@ -29,11 +29,17 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("tools.jackson.module:jackson-module-kotlin")
     runtimeOnly("org.postgresql:postgresql")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("io.github.oshai:kotlin-logging-jvm:7.0.0")
+    implementation("software.amazon.awssdk:s3:2.28.29")
+    implementation("org.apache.tika:tika-core:3.2.2")
+
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-liquibase-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webflux-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

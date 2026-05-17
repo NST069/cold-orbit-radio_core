@@ -1,0 +1,45 @@
+package com.coradio.tgfetch.infrastructure.persistence.adapter
+
+import com.coradio.tgfetch.domain.model.TrackFile
+import com.coradio.tgfetch.domain.port.out.TrackFileRepositoryPort
+import com.coradio.tgfetch.infrastructure.persistence.mapper.TrackFileMapper
+import com.coradio.tgfetch.infrastructure.persistence.repository.TrackFileRepository
+import com.coradio.tgfetch.infrastructure.persistence.repository.TrackRepository
+import jakarta.persistence.EntityNotFoundException
+import org.springframework.stereotype.Component
+import java.util.UUID
+
+@Component
+class TrackFileAdapter(
+    private val trackFileRepository: TrackFileRepository,
+    private val trackRepository: TrackRepository
+): TrackFileRepositoryPort {
+    override fun save(trackFile: TrackFile): TrackFile {
+        val entity = TrackFileMapper.toEntity(trackFile)
+        val saved = trackFileRepository.save(entity)
+        return TrackFileMapper.toDomain(saved)
+    }
+
+    override fun findById(id: UUID): TrackFile? {
+        return trackFileRepository.findById(id)
+            .map(TrackFileMapper::toDomain)
+            .orElse(null)
+    }
+
+    override fun findByTrackId(trackId: UUID): TrackFile? {
+        val trackEntity = trackRepository.findById(trackId)
+            .orElseThrow { EntityNotFoundException("Track with id $trackId not found") }
+        return trackFileRepository.findByTrackEntity(trackEntity)
+            .map(TrackFileMapper::toDomain)
+            .orElse(null)
+    }
+
+    override fun findAll(): List<TrackFile> {
+        return trackFileRepository.findAll()
+            .map(TrackFileMapper::toDomain)
+    }
+
+    override fun deleteById(id: UUID) {
+        trackFileRepository.deleteById(id)
+    }
+}
