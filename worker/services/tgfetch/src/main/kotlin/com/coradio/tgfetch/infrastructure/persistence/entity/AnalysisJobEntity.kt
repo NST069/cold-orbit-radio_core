@@ -1,7 +1,10 @@
 package com.coradio.tgfetch.infrastructure.persistence.entity
 
+import com.coradio.tgfetch.domain.enums.AnalysisJobStatus
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -9,7 +12,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.springframework.data.annotation.CreatedDate
-import java.time.OffsetDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -25,17 +28,18 @@ class AnalysisJobEntity {
     lateinit var trackFileEntity: TrackFileEntity
 
     @Column(name = "status", nullable = false)
-    lateinit var status: String
+    @Enumerated(EnumType.STRING)
+    var status: AnalysisJobStatus = AnalysisJobStatus.CREATED
 
     @CreatedDate
     @Column(name = "created_at", nullable = false)
-    lateinit var createdAt: OffsetDateTime
+    lateinit var createdAt: Instant
 
     @Column(name = "started_at")
-    var startedAt: OffsetDateTime? = null
+    var startedAt: Instant? = null
 
     @Column(name = "finished_at")
-    var finishedAt: OffsetDateTime? = null
+    var finishedAt: Instant? = null
 
     @Column(name = "error_message")
     var errorMessage: String? = null

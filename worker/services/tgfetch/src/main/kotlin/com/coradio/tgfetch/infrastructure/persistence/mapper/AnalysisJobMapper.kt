@@ -7,15 +7,17 @@ object AnalysisJobMapper {
     fun toDomain(analysisJobEntity: AnalysisJobEntity): AnalysisJob = AnalysisJob(
         id = analysisJobEntity.id,
         trackFile = TrackFileMapper.toDomain(analysisJobEntity.trackFileEntity),
+        status = analysisJobEntity.status,
         createdAt = analysisJobEntity.createdAt,
         startedAt = analysisJobEntity.startedAt,
         finishedAt = analysisJobEntity.finishedAt,
-        errorMessage = analysisJobEntity.errorMessage
+        errorMessage = analysisJobEntity.errorMessage,
     )
 
     fun toEntity(analysisJob: AnalysisJob): AnalysisJobEntity = AnalysisJobEntity().apply {
         this.id = analysisJob.id
         this.trackFileEntity = TrackFileMapper.toEntity(analysisJob.trackFile)
+        this.status = analysisJob.status
         this.createdAt = analysisJob.createdAt
         this.startedAt = analysisJob.startedAt
         this.finishedAt = analysisJob.finishedAt

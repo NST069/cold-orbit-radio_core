@@ -13,6 +13,7 @@ class AnalysisJobMapperTest {
 
         assertEquals(mockAnalysisJob.id, result.id)
         assertEquals(mockAnalysisJob.trackFile.id, result.trackFile.id)
+        assertEquals(mockAnalysisJob.status, result.status)
         assertEquals(mockAnalysisJob.createdAt, result.createdAt)
         assertEquals(mockAnalysisJob.startedAt, result.startedAt)
         assertEquals(mockAnalysisJob.finishedAt, result.finishedAt)
@@ -25,6 +26,7 @@ class AnalysisJobMapperTest {
 
         assertEquals(mockAnalysisJobEntity.id, result.id)
         assertEquals(mockAnalysisJobEntity.trackFileEntity.id, result.trackFileEntity.id)
+        assertEquals(mockAnalysisJobEntity.status, result.status)
         assertEquals(mockAnalysisJobEntity.createdAt, result.createdAt)
         assertEquals(mockAnalysisJobEntity.startedAt, result.startedAt)
         assertEquals(mockAnalysisJobEntity.finishedAt, result.finishedAt)

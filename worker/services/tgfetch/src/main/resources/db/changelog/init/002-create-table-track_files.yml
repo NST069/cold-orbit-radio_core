@@ -18,16 +18,21 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: sha256
+                  name: etag
                   type: text
                   constraints:
                     nullable: false
-                    unique: true
+              - column:
+                  name: telegram_file_id
+                  type: text
+                  constraints:
+                    nullable: false
               - column:
                   name: telegram_file_unique_id
                   type: text
                   constraints:
                     nullable: false
+                    unique: true
               - column:
                   name: storage_key
                   type: text
@@ -42,7 +47,18 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: uploaded_at
-                  type: timestamp
+                  name: downloaded_at
+                  type: timestamptz
                   constraints:
                     nullable: false
+              - column:
+                  name: status
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: retry_count
+                  type: integer
+              - column:
+                  name: last_download_attempt_at
+                  type: timestamptz

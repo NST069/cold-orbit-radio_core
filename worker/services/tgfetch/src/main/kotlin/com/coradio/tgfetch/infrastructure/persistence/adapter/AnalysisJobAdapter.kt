@@ -1,7 +1,7 @@
 package com.coradio.tgfetch.infrastructure.persistence.adapter
 
 import com.coradio.tgfetch.domain.model.AnalysisJob
-import com.coradio.tgfetch.domain.port.out.AnalysisJobRepositoryPort
+import com.coradio.tgfetch.domain.port.out.persistence.AnalysisJobRepositoryPort
 import com.coradio.tgfetch.infrastructure.persistence.mapper.AnalysisJobMapper
 import com.coradio.tgfetch.infrastructure.persistence.repository.AnalysisJobRepository
 import org.springframework.stereotype.Component

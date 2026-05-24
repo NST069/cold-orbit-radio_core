@@ -1,4 +1,4 @@
-package com.coradio.tgfetch.domain.port.out
+package com.coradio.tgfetch.domain.port.out.persistence
 
 import com.coradio.tgfetch.domain.model.TrackFile
 import java.util.UUID

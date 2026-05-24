@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-indexes
+      author: NiKryukov
+      changes:
+        - createIndex:
+            tableName: telegram_posts
+            indexName: idx_telegram_posts_channel_message
+            columns:
+              - column:
+                  name: channel_id
+              - column:
+                  name: message_id
+
+        - createIndex:
+            tableName: track_files
+            indexName: idx_track_files_track_id
+            columns:
+              - column:
+                  name: track_id
+
+        - createIndex:
+            tableName: analysis_jobs
+            indexName: idx_analysis_jobs_status
+            columns:
+              - column:
+                  name: status

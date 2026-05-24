@@ -9,7 +9,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.springframework.data.annotation.CreatedDate
-import java.time.OffsetDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -20,8 +20,11 @@ class TelegramPostEntity {
     @Column(name = "id", nullable = false)
     var id: UUID? = null
 
-    @Column(name = "telegram_post_id", nullable = false)
-    lateinit var telegramPostId: String
+    @Column(name = "channel_id", nullable = false)
+    var channelId: Long = 0
+
+    @Column(name = "message_id", nullable = false)
+    var messageId: Long = 0
 
     @OneToOne
     @JoinColumn(name = "track_id", nullable = false)
@@ -34,7 +37,10 @@ class TelegramPostEntity {
     @Column(name = "raw_text")
     var rawText: String? = null
 
+    @Column(name = "published_at", nullable = false)
+    lateinit var publishedAt: Instant
+
     @CreatedDate
     @Column(name = "fetched_at", nullable = false)
-    lateinit var fetchedAt: OffsetDateTime
+    lateinit var fetchedAt: Instant
 }

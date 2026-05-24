@@ -1,7 +1,7 @@
 package com.coradio.tgfetch.infrastructure.persistence.adapter
 
 import com.coradio.tgfetch.domain.model.TrackFile
-import com.coradio.tgfetch.domain.port.out.TrackFileRepositoryPort
+import com.coradio.tgfetch.domain.port.out.persistence.TrackFileRepositoryPort
 import com.coradio.tgfetch.infrastructure.persistence.mapper.TrackFileMapper
 import com.coradio.tgfetch.infrastructure.persistence.repository.TrackFileRepository
 import com.coradio.tgfetch.infrastructure.persistence.repository.TrackRepository

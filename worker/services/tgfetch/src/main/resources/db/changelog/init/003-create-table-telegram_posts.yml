@@ -13,8 +13,13 @@ databaseChangeLog:
                     primaryKey: true
                     primaryKeyName: pk_post_id
               - column:
-                  name: telegram_post_id
-                  type: text
+                  name: channel_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: message_id
+                  type: bigint
                   constraints:
                     nullable: false
               - column:
@@ -31,7 +36,12 @@ databaseChangeLog:
                   name: raw_text
                   type: text
               - column:
+                  name: published_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
                   name: fetched_at
-                  type: timestamp
+                  type: timestamptz
                   constraints:
                     nullable: false

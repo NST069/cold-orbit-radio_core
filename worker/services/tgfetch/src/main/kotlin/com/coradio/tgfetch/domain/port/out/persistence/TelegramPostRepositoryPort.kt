@@ -1,4 +1,4 @@
-package com.coradio.tgfetch.domain.port.out
+package com.coradio.tgfetch.domain.port.out.persistence
 
 import com.coradio.tgfetch.domain.model.TelegramPost
 import java.util.UUID

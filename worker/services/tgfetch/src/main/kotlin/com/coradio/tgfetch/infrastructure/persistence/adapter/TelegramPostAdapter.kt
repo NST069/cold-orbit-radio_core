@@ -1,7 +1,7 @@
 package com.coradio.tgfetch.infrastructure.persistence.adapter
 
 import com.coradio.tgfetch.domain.model.TelegramPost
-import com.coradio.tgfetch.domain.port.out.TelegramPostRepositoryPort
+import com.coradio.tgfetch.domain.port.out.persistence.TelegramPostRepositoryPort
 import com.coradio.tgfetch.infrastructure.persistence.mapper.TelegramPostMapper
 import com.coradio.tgfetch.infrastructure.persistence.repository.TelegramPostRepository
 import org.springframework.stereotype.Component

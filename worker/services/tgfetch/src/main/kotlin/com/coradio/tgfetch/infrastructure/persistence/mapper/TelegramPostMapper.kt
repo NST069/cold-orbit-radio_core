@@ -6,17 +6,21 @@ import com.coradio.tgfetch.infrastructure.persistence.entity.TelegramPostEntity
 object TelegramPostMapper {
     fun toDomain(telegramPostEntity: TelegramPostEntity): TelegramPost = TelegramPost(
         id = telegramPostEntity.id,
-        telegramPostId = telegramPostEntity.telegramPostId,
+        channelId = telegramPostEntity.channelId,
+        messageId = telegramPostEntity.messageId,
         track = TrackMapper.toDomain(telegramPostEntity.trackEntity),
         trackFile = TrackFileMapper.toDomain(telegramPostEntity.trackFileEntity),
-        rawText = telegramPostEntity.rawText
+        rawText = telegramPostEntity.rawText,
+        publishedAt = telegramPostEntity.publishedAt,
     )
 
     fun toEntity(telegramPost: TelegramPost): TelegramPostEntity = TelegramPostEntity().apply {
         this.id = telegramPost.id
-        this.telegramPostId = telegramPost.telegramPostId
+        this.channelId = telegramPost.channelId
+        this.messageId = telegramPost.messageId
         this.trackEntity = TrackMapper.toEntity(telegramPost.track)
         this.trackFileEntity = TrackFileMapper.toEntity(telegramPost.trackFile)
         this.rawText = telegramPost.rawText
+        this.publishedAt = telegramPost.publishedAt
     }
 }

@@ -19,20 +19,20 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: status
-                  type: text
+                  type: varchar(32)
                   constraints:
                     nullable: false
               - column:
                   name: created_at
-                  type: timestamp
+                  type: timestamptz
                   constraints:
                     nullable: false
               - column:
                   name: started_at
-                  type: timestamp
+                  type: timestamptz
               - column:
                   name: finished_at
-                  type: timestamp
+                  type: timestamptz
               - column:
                   name: error_message
                   type: text

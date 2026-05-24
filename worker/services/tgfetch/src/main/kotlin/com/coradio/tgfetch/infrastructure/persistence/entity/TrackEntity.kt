@@ -2,6 +2,8 @@ package com.coradio.tgfetch.infrastructure.persistence.entity
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -9,7 +11,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedDate
-import java.time.OffsetDateTime
+import java.time.Instant
 import java.util.UUID
 
 @Entity
@@ -31,11 +33,11 @@ class TrackEntity {
 
     @CreatedDate
     @Column(name = "created_at", nullable = false)
-    lateinit var createdAt: OffsetDateTime
+    lateinit var createdAt: Instant
 
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
-    lateinit var updatedAt: OffsetDateTime
+    lateinit var updatedAt: Instant
 
     @OneToOne(mappedBy = "trackEntity")
     lateinit var trackFileEntity: TrackFileEntity

@@ -8,7 +8,7 @@ object TrackMapper {
         id = trackEntity.id,
         title = trackEntity.title,
         artist = trackEntity.artist,
-        duration = trackEntity.duration
+        duration = trackEntity.duration,
     )
 
     fun toEntity(track: Track): TrackEntity = TrackEntity().apply {

@@ -1,7 +1,7 @@
 package com.coradio.tgfetch.infrastructure.persistence.adapter
 
 import com.coradio.tgfetch.domain.model.Track
-import com.coradio.tgfetch.domain.port.out.TrackRepositoryPort
+import com.coradio.tgfetch.domain.port.out.persistence.TrackRepositoryPort
 import com.coradio.tgfetch.infrastructure.persistence.mapper.TrackMapper
 import com.coradio.tgfetch.infrastructure.persistence.repository.TrackRepository
 import org.springframework.stereotype.Component

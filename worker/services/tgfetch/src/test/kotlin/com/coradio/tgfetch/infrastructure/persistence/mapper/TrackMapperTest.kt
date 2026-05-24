@@ -34,7 +34,7 @@ class TrackMapperTest {
             id = mockTrack.id,
             title = "",
             artist = "",
-            duration = mockTrack.duration
+            duration = mockTrack.duration,
         )
         val result = TrackMapper.toEntity(track)
 
