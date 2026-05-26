@@ -5,5 +5,6 @@ enum class TrackFileStatus {
     PENDING,
     DOWNLOADING,
     READY,
-    FAILED
+    FAILED,
+    FAILED_PERMANENTLY
 }

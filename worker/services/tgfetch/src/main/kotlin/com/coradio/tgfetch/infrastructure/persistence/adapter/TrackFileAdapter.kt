@@ -1,5 +1,6 @@
 package com.coradio.tgfetch.infrastructure.persistence.adapter
 
+import com.coradio.tgfetch.domain.enums.TrackFileStatus
 import com.coradio.tgfetch.domain.model.TrackFile
 import com.coradio.tgfetch.domain.port.out.persistence.TrackFileRepositoryPort
 import com.coradio.tgfetch.infrastructure.persistence.mapper.TrackFileMapper
@@ -42,4 +43,14 @@ class TrackFileAdapter(
     override fun deleteById(id: UUID) {
         trackFileRepository.deleteById(id)
     }
+
+    override fun findAllByStatus(status: TrackFileStatus): List<TrackFile> {
+        return trackFileRepository.findAllByStatus(status)
+            .map(TrackFileMapper::toDomain)
+    }
+
+    override fun existsByTelegramFileUniqueId(telegramFileUniqueId: String): Boolean {
+        return trackFileRepository.existsByTelegramFileUniqueId(telegramFileUniqueId)
+    }
+
 }

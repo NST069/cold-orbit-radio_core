@@ -7,9 +7,22 @@ import java.util.UUID
 data class AnalysisJob (
     val id: UUID? = null,
     val trackFile: TrackFile,
-    val status: AnalysisJobStatus,
+    var status: AnalysisJobStatus,
     val createdAt: Instant,
-    val startedAt: Instant? = null,
-    val finishedAt: Instant? = null,
-    val errorMessage: String? = null
-)
+    var startedAt: Instant? = null,
+    var finishedAt: Instant? = null,
+    var errorMessage: String? = null
+) {
+    fun changeStatus(newStatus: AnalysisJobStatus) {
+        this.status = newStatus
+        if (newStatus == AnalysisJobStatus.RUNNING)
+            this.startedAt = Instant.now()
+
+        if (newStatus == AnalysisJobStatus.COMPLETED || newStatus == AnalysisJobStatus.FAILED)
+            this.finishedAt = Instant.now()
+    }
+
+    fun changeErrorMessage(newErrorMessage: String) {
+        this.errorMessage = newErrorMessage
+    }
+}

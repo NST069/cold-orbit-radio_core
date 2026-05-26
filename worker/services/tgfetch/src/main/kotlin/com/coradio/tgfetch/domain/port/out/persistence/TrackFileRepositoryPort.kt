@@ -1,5 +1,6 @@
 package com.coradio.tgfetch.domain.port.out.persistence
 
+import com.coradio.tgfetch.domain.enums.TrackFileStatus
 import com.coradio.tgfetch.domain.model.TrackFile
 import java.util.UUID
 
@@ -9,4 +10,8 @@ interface TrackFileRepositoryPort {
     fun findByTrackId(trackId: UUID): TrackFile?
     fun findAll(): List<TrackFile>
     fun deleteById(id: UUID)
+
+    fun findAllByStatus(status: TrackFileStatus): List<TrackFile>
+
+    fun existsByTelegramFileUniqueId(telegramFileUniqueId: String): Boolean
 }

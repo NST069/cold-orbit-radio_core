@@ -8,4 +8,10 @@ interface TelegramPostRepositoryPort {
     fun findById(id: UUID): TelegramPost?
     fun findAll(): List<TelegramPost>
     fun deleteById(id: UUID)
+
+    fun findByChannelAndMessageId(
+        channelId: Long,
+        messageId: Long
+    ): TelegramPost?
+
 }

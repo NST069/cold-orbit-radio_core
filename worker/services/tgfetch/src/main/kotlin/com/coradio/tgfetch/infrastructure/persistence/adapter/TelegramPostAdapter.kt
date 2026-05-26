@@ -31,4 +31,15 @@ class TelegramPostAdapter(
     override fun deleteById(id: UUID) {
         telegramPostRepository.deleteById(id)
     }
+
+    override fun findByChannelAndMessageId(
+        channelId: Long,
+        messageId: Long
+    ): TelegramPost? {
+        val entity = telegramPostRepository.findByChannelIdAndMessageId(channelId, messageId)
+        return if (entity != null)
+            TelegramPostMapper.toDomain(entity)
+        else null
+    }
+
 }

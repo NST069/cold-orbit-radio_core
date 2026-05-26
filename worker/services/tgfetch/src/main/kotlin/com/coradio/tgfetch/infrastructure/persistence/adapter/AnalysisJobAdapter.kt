@@ -1,5 +1,6 @@
 package com.coradio.tgfetch.infrastructure.persistence.adapter
 
+import com.coradio.tgfetch.domain.enums.AnalysisJobStatus
 import com.coradio.tgfetch.domain.model.AnalysisJob
 import com.coradio.tgfetch.domain.port.out.persistence.AnalysisJobRepositoryPort
 import com.coradio.tgfetch.infrastructure.persistence.mapper.AnalysisJobMapper
@@ -35,5 +36,10 @@ class AnalysisJobAdapter(
 
     override fun deleteById(id: UUID) {
         analysisJobRepository.deleteById(id)
+    }
+
+    override fun findAllByStatus(status: AnalysisJobStatus): List<AnalysisJob> {
+        return analysisJobRepository.findAllByStatus(status)
+            .map(AnalysisJobMapper::toDomain)
     }
 }

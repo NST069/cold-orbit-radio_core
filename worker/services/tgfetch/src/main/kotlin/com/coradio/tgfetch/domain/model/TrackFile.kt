@@ -10,10 +10,23 @@ data class TrackFile(
     val etag: String,
     val telegramFileId: String,
     val telegramFileUniqueId: String,
-    val storageKey: String? = null,
+    var storageKey: String? = null,
     val fileSize: Long,
     val mimeType: String,
-    val status: TrackFileStatus,
-    val retryCount: Int,
-    val lastDownloadAttemptAt: Instant
-)
+    var status: TrackFileStatus? = null,
+    var retryCount: Int = 0,
+    var lastDownloadAttemptAt: Instant? = null,
+) {
+    fun changeStatus(newStatus: TrackFileStatus) {
+        this.status = newStatus
+    }
+
+    fun addStorageKey(storageKey: String) {
+        this.storageKey = storageKey
+    }
+
+    fun retry() {
+        this.retryCount = this.retryCount.plus(1)
+        this.lastDownloadAttemptAt = Instant.now()
+    }
+}

@@ -58,7 +58,7 @@ class TrackFileEntity {
     var retryCount: Int = 0
 
     @Column(name = "last_download_attempt_at")
-    lateinit var lastDownloadAttemptAt: Instant
+    var lastDownloadAttemptAt: Instant? = null
 
     @OneToMany(mappedBy = "trackFileEntity")
     lateinit var analysisJobEntities: MutableList<AnalysisJobEntity>

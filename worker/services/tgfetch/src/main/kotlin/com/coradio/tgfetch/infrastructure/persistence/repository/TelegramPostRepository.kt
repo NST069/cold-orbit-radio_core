@@ -7,4 +7,10 @@ import java.util.UUID
 
 @Repository
 interface TelegramPostRepository : JpaRepository<TelegramPostEntity, UUID> {
+
+    fun findByChannelIdAndMessageId(
+        channelId: Long,
+        messageId: Long
+    ): TelegramPostEntity?
+
 }
