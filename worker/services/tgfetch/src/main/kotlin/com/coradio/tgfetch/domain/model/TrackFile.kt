@@ -1,18 +1,19 @@
 package com.coradio.tgfetch.domain.model
 
 import com.coradio.tgfetch.domain.enums.TrackFileStatus
+import com.coradio.tgfetch.domain.port.out.telegram.TelegramTrackData
 import java.time.Instant
 import java.util.UUID
 
 data class TrackFile(
     val id: UUID? = null,
-    val track: Track,
     val etag: String,
-    val telegramFileId: String,
-    val telegramFileUniqueId: String,
+    var telegramFileId: String,
+    var telegramFileUniqueId: String,
     var storageKey: String? = null,
-    val fileSize: Long,
-    val mimeType: String,
+    var fileName: String,
+    var fileSize: Long,
+    var mimeType: String,
     var status: TrackFileStatus? = null,
     var retryCount: Int = 0,
     var lastDownloadAttemptAt: Instant? = null,
@@ -21,12 +22,44 @@ data class TrackFile(
         this.status = newStatus
     }
 
-    fun addStorageKey(storageKey: String) {
-        this.storageKey = storageKey
+    fun markPending(){
+        this.status = TrackFileStatus.PENDING
+        this.retryCount = 0
     }
 
-    fun retry() {
-        this.retryCount = this.retryCount.plus(1)
-        this.lastDownloadAttemptAt = Instant.now()
+    fun syncWith(post: TelegramTrackData): Boolean {
+        var changed = false
+
+        if (this.telegramFileId != post.remoteFileId) {
+            this.telegramFileId = post.remoteFileId
+            changed = true
+        }
+
+        if (this.telegramFileUniqueId != post.fileUniqueId) {
+            this.telegramFileUniqueId = post.fileUniqueId
+            changed = true
+        }
+
+        if (post.fileName != null && this.fileName != post.fileName) {
+            this.fileName = post.fileName
+            changed = true
+        }
+
+        if (post.fileSizeBytes != null && this.fileSize != post.fileSizeBytes) {
+            this.fileSize = post.fileSizeBytes
+            changed = true
+        }
+
+        if (post.mimeType != null && this.mimeType != post.mimeType) {
+            this.mimeType = post.mimeType
+            changed = true
+        }
+
+        if(changed){
+            this.changeStatus(TrackFileStatus.PENDING)
+        }
+
+        return changed
     }
+
 }

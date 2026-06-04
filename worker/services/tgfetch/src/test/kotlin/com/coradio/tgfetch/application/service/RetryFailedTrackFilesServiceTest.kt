@@ -3,6 +3,7 @@ package com.coradio.tgfetch.application.service
 import com.coradio.tgfetch.domain.enums.TrackFileStatus
 import com.coradio.tgfetch.domain.model.Track
 import com.coradio.tgfetch.domain.model.TrackFile
+import com.coradio.tgfetch.domain.model.view.TrackFileJobView
 import com.coradio.tgfetch.domain.port.out.persistence.TrackFileRepositoryPort
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -32,6 +33,8 @@ class RetryFailedTrackFilesServiceTest {
 
     lateinit var trackFile: TrackFile
 
+    lateinit var trackFileJobView: TrackFileJobView
+
     @BeforeEach
     fun setUp() {
         val track = Track(
@@ -43,15 +46,23 @@ class RetryFailedTrackFilesServiceTest {
 
         trackFile = TrackFile(
             id = UUID.randomUUID(),
-            track = track,
             etag = "etag",
             telegramFileId = "1234",
             telegramFileUniqueId = "1234",
+            fileName = "artist - title.flac",
             fileSize = 100,
             mimeType = "flac",
             status = TrackFileStatus.FAILED,
             retryCount = 0,
             lastDownloadAttemptAt = Instant.now().minus(5, ChronoUnit.MINUTES),
+        )
+
+        trackFileJobView = TrackFileJobView(
+            id = trackFile.id,
+            telegramFileId = trackFile.telegramFileId,
+            artist = track.artist,
+            title = track.title,
+            retryCount = trackFile.retryCount,
         )
     }
 
@@ -59,10 +70,10 @@ class RetryFailedTrackFilesServiceTest {
     fun `execute from failed to pending`() {
         val trackFilePending = TrackFile(
             id = trackFile.id,
-            track = trackFile.track,
             etag = "etag",
             telegramFileId = "1234",
             telegramFileUniqueId = "1234",
+            fileName = "artist - title.flac",
             fileSize = 100,
             mimeType = "flac",
             status = TrackFileStatus.PENDING,
@@ -70,7 +81,9 @@ class RetryFailedTrackFilesServiceTest {
             lastDownloadAttemptAt = Instant.now(),
         )
         whenever(trackFileRepository.findAllByStatus(TrackFileStatus.FAILED))
-            .thenReturn(listOf(trackFile))
+            .thenReturn(listOf(trackFileJobView))
+        whenever(trackFileRepository.findById(any()))
+            .thenReturn(trackFile)
         whenever(trackFileRepository.save(any())).thenReturn(trackFilePending)
 
         retryFailedTrackFilesService.execute()
@@ -87,10 +100,10 @@ class RetryFailedTrackFilesServiceTest {
     fun `execute from failed to failed_permanently`() {
         val trackFileFailedPermanently = TrackFile(
             id = trackFile.id,
-            track = trackFile.track,
             etag = "etag",
             telegramFileId = "1234",
             telegramFileUniqueId = "1234",
+            fileName = "artist - title.flac",
             fileSize = 100,
             mimeType = "flac",
             status = TrackFileStatus.FAILED_PERMANENTLY,
@@ -98,7 +111,9 @@ class RetryFailedTrackFilesServiceTest {
             lastDownloadAttemptAt = Instant.now(),
         )
         whenever(trackFileRepository.findAllByStatus(TrackFileStatus.FAILED))
-            .thenReturn(listOf(trackFile.copy(retryCount = 5)))
+            .thenReturn(listOf(trackFileJobView.copy(retryCount = 5)))
+        whenever(trackFileRepository.findById(any()))
+            .thenReturn(trackFile.copy(retryCount = 5))
 
         whenever(trackFileRepository.save(any())).thenReturn(trackFileFailedPermanently)
 

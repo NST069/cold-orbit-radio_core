@@ -4,8 +4,11 @@ import com.coradio.tgfetch.application.util.MetadataResolver
 import com.coradio.tgfetch.domain.model.TelegramPost
 import com.coradio.tgfetch.domain.model.Track
 import com.coradio.tgfetch.domain.model.TrackFile
-import com.coradio.tgfetch.domain.model.TrackMetadata
+import com.coradio.tgfetch.domain.model.valueobject.TrackMetadata
+import com.coradio.tgfetch.domain.model.view.TelegramPostView
 import com.coradio.tgfetch.domain.port.out.persistence.TelegramPostRepositoryPort
+import com.coradio.tgfetch.domain.port.out.persistence.TrackRepositoryPort
+import com.coradio.tgfetch.domain.port.out.telegram.MessagePageData
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramGatewayPort
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramTrackData
 import kotlinx.coroutines.test.runTest
@@ -36,6 +39,9 @@ class SynchronizeTelegramChannelServiceTest {
     lateinit var telegramPostRepository: TelegramPostRepositoryPort
 
     @Mock
+    lateinit var trackRepository: TrackRepositoryPort
+
+    @Mock
     lateinit var metadataResolver: MetadataResolver
 
     @InjectMocks
@@ -46,13 +52,18 @@ class SynchronizeTelegramChannelServiceTest {
     lateinit var telegramPost: TelegramPost
     lateinit var telegramTrackData: TelegramTrackData
     lateinit var trackMetadata: TrackMetadata
+    lateinit var messagePageData: MessagePageData
+    lateinit var telegramPostView: TelegramPostView
+
+    val channelId = 12345L
 
     @BeforeEach
     fun setUp() = runTest {
         telegramTrackData = TelegramTrackData(
             channelId = 1234L,
             messageId = 1234L,
-            fileId = "12345",
+            tdFileId = 12345L,
+            remoteFileId = "12345",
             fileUniqueId = "12345",
             artist = "John Doe",
             title = "Hello",
@@ -61,20 +72,17 @@ class SynchronizeTelegramChannelServiceTest {
             fileSizeBytes = 1000,
             fileName = "Hello.flac",
             mimeType = "flac",
+            coverTdFileId = 0,
+            coverRemoteFileId = null,
+            coverUniqueFileId = null,
             publishedAt = Instant.now().minus(5, ChronoUnit.DAYS),
         )
 
-        track = Track(
-            title = telegramTrackData.title ?: "",
-            artist = telegramTrackData.artist ?: "",
-            duration = telegramTrackData.durationSeconds ?: 0,
-        )
-
         trackFile = TrackFile(
-            track = track,
             etag = UUID.randomUUID().toString(),
-            telegramFileId = telegramTrackData.fileId ?: "",
-            telegramFileUniqueId = telegramTrackData.fileUniqueId ?: "",
+            telegramFileId = telegramTrackData.remoteFileId,
+            telegramFileUniqueId = telegramTrackData.fileUniqueId,
+            fileName = telegramTrackData.fileName ?:"",
             fileSize = telegramTrackData.fileSizeBytes ?: 0,
             mimeType = telegramTrackData.mimeType ?: "",
         )
@@ -82,13 +90,30 @@ class SynchronizeTelegramChannelServiceTest {
         telegramPost = TelegramPost(
             channelId = telegramTrackData.channelId,
             messageId = telegramTrackData.messageId,
-            track = track,
-            trackFile = trackFile,
             rawText = telegramTrackData.rawText ?: "",
             publishedAt = telegramTrackData.publishedAt,
         )
 
-        whenever(telegramGateway.getTrackPosts()).thenReturn(listOf(telegramTrackData))
+        track = Track(
+            title = telegramTrackData.title ?: "",
+            artist = telegramTrackData.artist ?: "",
+            duration = telegramTrackData.durationSeconds ?: 0,
+            trackFile = trackFile,
+            telegramPost = telegramPost,
+        )
+
+        messagePageData = MessagePageData(
+            items = listOf(telegramTrackData),
+            nextCursor = 0,
+            hasMore = false
+        )
+
+        telegramPostView = TelegramPostView(
+            id = telegramPost.id,
+            trackId = telegramPost.trackId,
+        )
+
+        whenever(telegramGateway.getMessages(any(), any(), any())).thenReturn(messagePageData)
 
         trackMetadata = TrackMetadata(
             artist = "John Doe",
@@ -100,18 +125,18 @@ class SynchronizeTelegramChannelServiceTest {
     @Test
     fun `execute should save a new post`() = runTest {
         whenever(telegramPostRepository.findByChannelAndMessageId(any(), any())).thenReturn(null)
-        whenever(telegramPostRepository.save(any())).thenReturn(telegramPost)
+        whenever(trackRepository.save(any())).thenReturn(track)
         whenever(metadataResolver.resolve(any())).thenReturn(trackMetadata)
 
-        synchronizeTelegramChannelService.execute()
+        synchronizeTelegramChannelService.execute(channelId)
 
-        val telegramPostCaptor = argumentCaptor<TelegramPost>()
+        val trackCaptor = argumentCaptor<Track>()
 
-        verify(telegramPostRepository, times(1)).save(telegramPostCaptor.capture())
+        verify(trackRepository, times(1)).save(trackCaptor.capture())
 
-        val resultPost = telegramPostCaptor.firstValue
-        val resultTrack = resultPost.track
-        val resultTrackFile = resultPost.trackFile
+        val resultTrack = trackCaptor.firstValue
+        val resultTrackFile = resultTrack.trackFile!!
+        val resultPost = resultTrack.telegramPost!!
 
         assertEquals(telegramPost.channelId, resultPost.channelId)
         assertEquals(telegramPost.messageId, resultPost.messageId)
@@ -133,46 +158,61 @@ class SynchronizeTelegramChannelServiceTest {
 
     @Test
     fun `execute should do nothing if track exists`() = runTest {
-        whenever(telegramPostRepository.findByChannelAndMessageId(any(), any())).thenReturn(telegramPost)
+        whenever(telegramPostRepository.findByChannelAndMessageId(any(), any())).thenReturn(telegramPostView)
 
-        synchronizeTelegramChannelService.execute()
+        synchronizeTelegramChannelService.execute(channelId)
 
         verify(telegramPostRepository, times(1)).findByChannelAndMessageId(any(), any())
-        verify(telegramPostRepository, never()).save(any())
+        verify(trackRepository, never()).save(any())
 
     }
 
     @Test
-    fun `execute should change track if trackFileUniqueId not matching`() = runTest {
+    fun `execute should change track if attributes not matching`() = runTest {
         val existingTrackFile = TrackFile(
-            track = trackFile.track,
             etag = trackFile.etag,
             telegramFileId = trackFile.telegramFileId,
             telegramFileUniqueId = "anotherTelegramFileUniqueId",
+            fileName = trackFile.fileName,
             fileSize = trackFile.fileSize,
             mimeType = trackFile.mimeType,
         )
         val existingPost = TelegramPost(
             channelId = telegramPost.channelId,
             messageId = telegramPost.messageId,
-            track = telegramPost.track,
-            trackFile = existingTrackFile,
-            rawText = telegramPost.rawText,
+            trackId = track.id,
+            rawText = "artist - title",
             publishedAt = telegramPost.publishedAt,
         )
 
-        whenever(telegramPostRepository.findByChannelAndMessageId(any(), any())).thenReturn(existingPost)
-        whenever(telegramPostRepository.save(any())).thenReturn(telegramPost)
+        val existingTrack = Track(
+            id = track.id,
+            artist = "artist",
+            title = "title",
+            duration = track.duration,
+            telegramPost = existingPost,
+            trackFile = existingTrackFile,
+        )
 
-        synchronizeTelegramChannelService.execute()
+        whenever(telegramPostRepository.findByChannelAndMessageId(any(), any())).thenReturn(telegramPostView)
+        //whenever(telegramPostRepository.save(any())).thenReturn(telegramPost)
+        whenever(trackRepository.findById(any())).thenReturn(existingTrack)
+        whenever(trackRepository.save(any())).thenReturn(track)
 
-        val telegramPostCaptor = argumentCaptor<TelegramPost>()
+        synchronizeTelegramChannelService.execute(channelId)
 
-        verify(telegramPostRepository, times(1)).save(telegramPostCaptor.capture())
+        //val telegramPostCaptor = argumentCaptor<TelegramPost>()
+        val trackCaptor = argumentCaptor<Track>()
 
-        val resultPost = telegramPostCaptor.firstValue
-        val resultTrack = resultPost.track
-        val resultTrackFile = resultPost.trackFile
+        //verify(telegramPostRepository, times(1)).save(telegramPostCaptor.capture())
+        verify(trackRepository, times(1)).save(trackCaptor.capture())
+
+//        val resultPost = telegramPostCaptor.firstValue
+//        val resultTrack = resultPost.track
+//        val resultTrackFile = resultPost.trackFile
+        val resultTrack = trackCaptor.firstValue
+        val resultTrackFile = resultTrack.trackFile!!
+        val resultPost = resultTrack.telegramPost!!
 
         assertEquals(telegramPost.channelId, resultPost.channelId)
         assertEquals(telegramPost.messageId, resultPost.messageId)

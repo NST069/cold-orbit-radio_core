@@ -1,5 +1,7 @@
 package com.coradio.tgfetch.domain.port.`in`
 
+import com.coradio.tgfetch.domain.model.valueobject.DownloadSummary
+
 interface DownloadPendingTrackFilesUseCase {
-    suspend fun execute()
+    fun execute(): DownloadSummary
 }

@@ -1,5 +1,6 @@
 package com.coradio.tgfetch.domain.model
 
+import com.coradio.tgfetch.domain.port.out.telegram.TelegramTrackData
 import java.time.Instant
 import java.util.UUID
 
@@ -7,15 +8,19 @@ data class TelegramPost(
     val id: UUID? = null,
     val channelId: Long,
     val messageId: Long,
-    var track: Track,
-    var trackFile: TrackFile,
+    val trackId: UUID? = null,
     var rawText: String? = null,
     val publishedAt: Instant,
-) {
-    fun changeTrack(track: Track, trackFile: TrackFile, rawText: String? = null) {
-        this.track = track
-        this.trackFile = trackFile
-        if (rawText != null) this.rawText = rawText
+){
+    fun syncWith(post: TelegramTrackData): Boolean{
+        var changed = false
+
+        if(this.rawText != post.rawText){
+            this.rawText = post.rawText
+            changed = true
+        }
+
+        return changed
     }
 
 }

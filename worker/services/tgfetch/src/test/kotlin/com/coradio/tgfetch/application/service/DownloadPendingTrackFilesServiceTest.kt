@@ -3,10 +3,13 @@ package com.coradio.tgfetch.application.service
 import com.coradio.tgfetch.domain.enums.TrackFileStatus
 import com.coradio.tgfetch.domain.model.Track
 import com.coradio.tgfetch.domain.model.TrackFile
+import com.coradio.tgfetch.domain.model.view.TrackFileJobView
 import com.coradio.tgfetch.domain.port.out.persistence.TrackFileRepositoryPort
 import com.coradio.tgfetch.domain.port.out.storage.AudioMetadataServicePort
 import com.coradio.tgfetch.domain.port.out.storage.StorageGatewayPort
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramGatewayPort
+import com.coradio.tgfetch.infrastructure.exception.StorageException
+import com.coradio.tgfetch.infrastructure.exception.TelegramException
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -47,6 +50,8 @@ class DownloadPendingTrackFilesServiceTest {
 
     lateinit var trackFile: TrackFile
 
+    lateinit var trackFileJobView: TrackFileJobView
+
     lateinit var tempFile: Path
 
     @BeforeEach
@@ -60,15 +65,23 @@ class DownloadPendingTrackFilesServiceTest {
 
         trackFile = TrackFile(
             id = UUID.randomUUID(),
-            track = track,
             etag = "etag",
             telegramFileId = "1234",
             telegramFileUniqueId = "1234",
+            fileName = "artist - title.flac",
             fileSize = 100,
             mimeType = "flac",
             status = TrackFileStatus.CREATED,
             retryCount = 0,
             lastDownloadAttemptAt = Instant.now().minus(5, ChronoUnit.MINUTES),
+        )
+
+        trackFileJobView = TrackFileJobView(
+            id = trackFile.id,
+            telegramFileId = trackFile.telegramFileId,
+            artist = track.artist,
+            title = track.title,
+            retryCount = trackFile.retryCount,
         )
 
         tempFile = Files.createTempFile("track", ".flac")
@@ -77,9 +90,11 @@ class DownloadPendingTrackFilesServiceTest {
     @Test
     fun `execute successfully`() = runTest {
         whenever(trackFileRepository.findAllByStatus(TrackFileStatus.PENDING))
-            .thenReturn(listOf(trackFile))
+            .thenReturn(listOf(trackFileJobView))
+        whenever(trackFileRepository.findById(any()))
+            .thenReturn(trackFile)
 
-        whenever(telegramGateway.downloadFile(any())).thenReturn(tempFile)
+        whenever(telegramGateway.downloadFile(any(), any())).thenReturn(tempFile)
 
         downloadPendingTrackFilesService.execute()
 
@@ -88,7 +103,7 @@ class DownloadPendingTrackFilesServiceTest {
         verify(trackFileRepository, atLeastOnce()).save(captor.capture())
         assertEquals(TrackFileStatus.READY, captor.allValues.last().status)
 
-        verify(telegramGateway).downloadFile(trackFile.telegramFileId)
+        verify(telegramGateway).downloadFile(trackFile.telegramFileId, "flac")
         verify(audioMetadataService).rewriteMetadata(any(), any(), any())
 
         verify(storageGateway).upload(any(), any())
@@ -98,9 +113,11 @@ class DownloadPendingTrackFilesServiceTest {
     @Test
     fun `execute failed on telegram error`() = runTest {
         whenever(trackFileRepository.findAllByStatus(TrackFileStatus.PENDING))
-            .thenReturn(listOf(trackFile))
-        whenever(telegramGateway.downloadFile(any()))
-            .thenThrow(RuntimeException("Telegram unavailable"))
+            .thenReturn(listOf(trackFileJobView))
+        whenever(trackFileRepository.findById(any()))
+            .thenReturn(trackFile)
+        whenever(telegramGateway.downloadFile(any(), any()))
+            .thenThrow(TelegramException("Telegram unavailable", RuntimeException()))
 
         downloadPendingTrackFilesService.execute()
 
@@ -113,10 +130,12 @@ class DownloadPendingTrackFilesServiceTest {
     @Test
     fun `execute failed on s3 error`() = runTest {
         whenever(trackFileRepository.findAllByStatus(TrackFileStatus.PENDING))
-            .thenReturn(listOf(trackFile))
-        whenever(telegramGateway.downloadFile(any())).thenReturn(tempFile)
+            .thenReturn(listOf(trackFileJobView))
+        whenever(trackFileRepository.findById(any()))
+            .thenReturn(trackFile)
+        whenever(telegramGateway.downloadFile(any(), any())).thenReturn(tempFile)
         whenever(storageGateway.upload(any(), any()))
-            .thenThrow(RuntimeException("S3 unavailable"))
+            .thenThrow(StorageException("S3 unavailable", RuntimeException()))
 
         downloadPendingTrackFilesService.execute()
 

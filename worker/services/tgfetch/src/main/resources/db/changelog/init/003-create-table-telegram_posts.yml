@@ -28,11 +28,6 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: track_file_id
-                  type: UUID
-                  constraints:
-                    nullable: false
-              - column:
                   name: raw_text
                   type: text
               - column:

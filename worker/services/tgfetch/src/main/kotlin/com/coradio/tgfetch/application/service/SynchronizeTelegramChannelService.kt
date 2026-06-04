@@ -1,36 +1,83 @@
 package com.coradio.tgfetch.application.service
 
 import com.coradio.tgfetch.application.util.MetadataResolver
+import com.coradio.tgfetch.domain.model.valueobject.SynchronizationSummary
 import com.coradio.tgfetch.domain.model.TelegramPost
 import com.coradio.tgfetch.domain.model.Track
 import com.coradio.tgfetch.domain.model.TrackFile
 import com.coradio.tgfetch.domain.port.`in`.SynchronizeTelegramChannelUseCase
 import com.coradio.tgfetch.domain.port.out.persistence.TelegramPostRepositoryPort
+import com.coradio.tgfetch.domain.port.out.persistence.TrackRepositoryPort
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramGatewayPort
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramTrackData
+import io.github.oshai.kotlinlogging.KotlinLogging.logger
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
+@Service
 class SynchronizeTelegramChannelService(
     private val telegramGateway: TelegramGatewayPort,
+    private val trackRepository: TrackRepositoryPort,
     private val telegramPostRepository: TelegramPostRepositoryPort,
     private val metadataResolver: MetadataResolver,
 ): SynchronizeTelegramChannelUseCase {
-    override suspend fun execute() {
-        val telegramPosts = telegramGateway.getTrackPosts()
 
-        telegramPosts.forEach { telegramPost ->
-            val existingPost =
-                telegramPostRepository.findByChannelAndMessageId(telegramPost.channelId, telegramPost.messageId)
+    private val log = logger {}
+    private lateinit var summary: SynchronizationSummary
 
-            if (existingPost == null) {
-                createNewTrack(telegramPost)
-                return@forEach
+    @Transactional
+    override suspend fun execute(channelId: Long, limit: Int): SynchronizationSummary {
+        log.info { "Starting telegram synchronization" }
+        val startedAt = Instant.now()
+
+        summary = SynchronizationSummary()
+
+        var cursor = 0L
+        var hasMore = true
+
+        while (hasMore) {
+
+            val page = telegramGateway.getMessages(
+                channelId = channelId,
+                limit = limit,
+                cursor = cursor
+            )
+
+            val items = page.items
+
+            if (items.isEmpty()) break
+
+            items.filter { !it.remoteFileId.isBlank() }.forEach { telegramPost ->
+                val existingPost =
+                    telegramPostRepository.findByChannelAndMessageId(telegramPost.channelId, telegramPost.messageId)
+
+                if (existingPost == null) {
+                    createNewTrack(telegramPost)
+                    return@forEach
+                }
+                existingPost.trackId
+                    ?.let { trackRepository.findById(it) }
+                    ?.let { track -> updateTrack(track, telegramPost) }
             }
-            updateTrack(existingPost, telegramPost)
+
+            cursor = page.nextCursor ?: 0
+
+            hasMore = page.hasMore
         }
+
+        val duration = Duration.between(
+            startedAt,
+            Instant.now()
+        )
+        log.info { "Synchronization completed in ${duration.toSeconds()}s. Summary: $summary" }
+
+        return summary
     }
 
-    private fun createNewTrack(telegramTrackData: TelegramTrackData): TelegramPost {
+    private fun createNewTrack(telegramTrackData: TelegramTrackData): Track {
 
         val metadata = metadataResolver.resolve(telegramTrackData)
 
@@ -41,10 +88,10 @@ class SynchronizeTelegramChannelService(
         )
 
         val trackFile = TrackFile(
-            track = track,
             etag = UUID.randomUUID().toString(),
-            telegramFileId = telegramTrackData.fileId ?: "",
-            telegramFileUniqueId = telegramTrackData.fileUniqueId ?: "",
+            telegramFileId = telegramTrackData.remoteFileId,
+            telegramFileUniqueId = telegramTrackData.fileUniqueId,
+            fileName = telegramTrackData.fileName ?: "",
             fileSize = telegramTrackData.fileSizeBytes ?: 0,
             mimeType = telegramTrackData.mimeType ?: "",
         )
@@ -52,36 +99,29 @@ class SynchronizeTelegramChannelService(
         val telegramPost = TelegramPost(
             channelId = telegramTrackData.channelId,
             messageId = telegramTrackData.messageId,
-            track = track,
-            trackFile = trackFile,
             rawText = telegramTrackData.rawText ?: "",
             publishedAt = telegramTrackData.publishedAt,
         )
 
-        return telegramPostRepository.save(telegramPost)
+        track.attachTelegramPost(telegramPost)
+        track.attachTrackFile(trackFile)
+
+        log.debug { "Created new track: ${track.artist} by ${track.title}" }
+        summary.created++
+
+        return trackRepository.save(track)
     }
 
-    private fun updateTrack(existingPost: TelegramPost, incomingPost: TelegramTrackData): TelegramPost? {
-        if (existingPost.trackFile.telegramFileUniqueId != incomingPost.fileUniqueId) {
-            val track = Track(
-                title = incomingPost.title ?: "",
-                artist = incomingPost.artist ?: "",
-                duration = incomingPost.durationSeconds ?: 0,
-            )
+    private fun updateTrack(existingTrack: Track, incomingPost: TelegramTrackData): Track? {
 
-            val trackFile = TrackFile(
-                track = track,
-                etag = UUID.randomUUID().toString(),
-                telegramFileId = incomingPost.fileId,
-                telegramFileUniqueId = incomingPost.fileUniqueId,
-                fileSize = incomingPost.fileSizeBytes ?: 0,
-                mimeType = incomingPost.mimeType ?: "",
-            )
+        if (existingTrack.syncWith(incomingPost)) {
+            log.debug { "Updated track: ${existingTrack.artist} by ${existingTrack.title}" }
+            summary.updated++
 
-            existingPost.changeTrack(track, trackFile)
+            return trackRepository.save(existingTrack)
+        } else
+            summary.skipped++
 
-            return telegramPostRepository.save(existingPost)
-        }
         return null
     }
 

@@ -1,6 +1,7 @@
 package com.coradio.tgfetch.domain.port.out.persistence
 
 import com.coradio.tgfetch.domain.model.TelegramPost
+import com.coradio.tgfetch.domain.model.view.TelegramPostView
 import java.util.UUID
 
 interface TelegramPostRepositoryPort {
@@ -12,6 +13,12 @@ interface TelegramPostRepositoryPort {
     fun findByChannelAndMessageId(
         channelId: Long,
         messageId: Long
-    ): TelegramPost?
+    ): TelegramPostView?
 
+    fun existsByChannelAndMessageId(
+        channelId: Long,
+        messageId: Long
+    ): Boolean
+
+    fun saveAll(newMessages: List<TelegramPost>)
 }

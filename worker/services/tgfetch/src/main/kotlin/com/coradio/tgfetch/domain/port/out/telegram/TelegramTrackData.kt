@@ -6,7 +6,8 @@ data class TelegramTrackData(
     val channelId: Long,
     val messageId: Long,
 
-    val fileId: String,
+    val tdFileId: Long,
+	val remoteFileId: String,
     val fileUniqueId: String,
 
     val artist: String?,
@@ -18,6 +19,10 @@ data class TelegramTrackData(
     val fileSizeBytes: Long?,
     val fileName: String?,
     val mimeType: String?,
+
+    val coverTdFileId: Long?,
+	val coverRemoteFileId: String?,
+    val coverUniqueFileId: String?,
 
     val publishedAt: Instant
 )

@@ -1,6 +1,6 @@
 package com.coradio.tgfetch.application.util
 
-import com.coradio.tgfetch.domain.model.TrackMetadata
+import com.coradio.tgfetch.domain.model.valueobject.TrackMetadata
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramTrackData
 import org.springframework.stereotype.Component
 

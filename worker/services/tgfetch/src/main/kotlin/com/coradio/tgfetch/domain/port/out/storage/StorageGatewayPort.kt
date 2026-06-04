@@ -1,15 +1,19 @@
 package com.coradio.tgfetch.domain.port.out.storage
 
-import java.io.InputStream
+import java.nio.file.Path
 
 interface StorageGatewayPort {
 
-    suspend fun upload(
+    fun upload(
         key: String,
-        stream: InputStream
+        file: Path
     )
 
-    suspend fun exists(
+    fun exists(
         key: String
     ): Boolean
+
+    fun delete(
+        key: String
+    )
 }

@@ -1,6 +1,6 @@
 package com.coradio.tgfetch.application.util
 
-import com.coradio.tgfetch.domain.model.TrackMetadata
+import com.coradio.tgfetch.domain.model.valueobject.TrackMetadata
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramTrackData
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -31,7 +31,8 @@ class MetadataResolverTest {
         telegramTrackData = TelegramTrackData(
             channelId = 1234L,
             messageId = 1234L,
-            fileId = "12345",
+            tdFileId = 12345L,
+            remoteFileId = "12345",
             fileUniqueId = "12345",
             artist = "John Doe",
             title = "Hello",
@@ -40,6 +41,9 @@ class MetadataResolverTest {
             fileSizeBytes = 1000,
             fileName = "Hello.flac",
             mimeType = "flac",
+            coverTdFileId = 0,
+            coverRemoteFileId = null,
+            coverUniqueFileId = null,
             publishedAt = Instant.now().minus(5, ChronoUnit.DAYS),
         )
 
@@ -55,7 +59,8 @@ class MetadataResolverTest {
         telegramTrackData = TelegramTrackData(
             channelId = 1234L,
             messageId = 1234L,
-            fileId = "12345",
+            tdFileId = 12345L,
+            remoteFileId = "12345",
             fileUniqueId = "12345",
             artist = "John Doe",
             title = "Hello",
@@ -64,6 +69,9 @@ class MetadataResolverTest {
             fileSizeBytes = 1000,
             fileName = "Hello.flac",
             mimeType = "flac",
+            coverTdFileId = 0,
+            coverRemoteFileId = null,
+            coverUniqueFileId = null,
             publishedAt = Instant.now().minus(5, ChronoUnit.DAYS),
         )
 
@@ -79,7 +87,8 @@ class MetadataResolverTest {
         telegramTrackData = TelegramTrackData(
             channelId = 1234L,
             messageId = 1234L,
-            fileId = "12345",
+            tdFileId = 12345L,
+            remoteFileId = "12345",
             fileUniqueId = "12345",
             artist = "",
             title = "Hello",
@@ -88,6 +97,9 @@ class MetadataResolverTest {
             fileSizeBytes = 1000,
             fileName = "Hello.flac",
             mimeType = "flac",
+            coverTdFileId = 0,
+            coverRemoteFileId = null,
+            coverUniqueFileId = null,
             publishedAt = Instant.now().minus(5, ChronoUnit.DAYS),
         )
 
@@ -103,7 +115,8 @@ class MetadataResolverTest {
         telegramTrackData = TelegramTrackData(
             channelId = 1234L,
             messageId = 1234L,
-            fileId = "12345",
+            tdFileId = 12345L,
+            remoteFileId = "12345",
             fileUniqueId = "12345",
             artist = "",
             title = "",
@@ -112,6 +125,9 @@ class MetadataResolverTest {
             fileSizeBytes = 1000,
             fileName = "John Doe - Hello.flac",
             mimeType = "flac",
+            coverTdFileId = 0,
+            coverRemoteFileId = null,
+            coverUniqueFileId = null,
             publishedAt = Instant.now().minus(5, ChronoUnit.DAYS),
         )
 
@@ -128,7 +144,8 @@ class MetadataResolverTest {
         telegramTrackData = TelegramTrackData(
             channelId = 1234L,
             messageId = 1234L,
-            fileId = "12345",
+            tdFileId = 12345L,
+            remoteFileId = "12345",
             fileUniqueId = "12345",
             artist = "",
             title = "",
@@ -137,6 +154,9 @@ class MetadataResolverTest {
             fileSizeBytes = 1000,
             fileName = "Hello.flac",
             mimeType = "flac",
+            coverTdFileId = 0,
+            coverRemoteFileId = null,
+            coverUniqueFileId = null,
             publishedAt = Instant.now().minus(5, ChronoUnit.DAYS),
         )
 

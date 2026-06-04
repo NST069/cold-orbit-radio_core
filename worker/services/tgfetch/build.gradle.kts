@@ -7,17 +7,17 @@ plugins {
 }
 
 group = "com.coradio"
-version = "0.0.1-SNAPSHOT"
+version = "1.0.0"
 description = "tgfetch"
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
-repositories {
-    mavenCentral()
+kotlin {
+    jvmToolchain(21)
 }
 
 dependencies {
@@ -29,9 +29,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("tools.jackson.module:jackson-module-kotlin")
     runtimeOnly("org.postgresql:postgresql")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.0")
-    implementation("software.amazon.awssdk:s3:2.28.29")
+    implementation("net.jthink:jaudiotagger:3.0.1")
+    implementation("io.minio:minio:8.6.0")
+    implementation("com.google.guava:guava:33.4.0-jre")
     implementation("org.apache.tika:tika-core:3.2.2")
 
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")

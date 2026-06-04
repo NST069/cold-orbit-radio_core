@@ -1,14 +1,22 @@
 package com.coradio.tgfetch.application.service
 
 import com.coradio.tgfetch.domain.enums.TrackFileStatus
-import com.coradio.tgfetch.domain.model.TrackFile
+import com.coradio.tgfetch.domain.model.mapper.ExtensionMapper
+import com.coradio.tgfetch.domain.model.valueobject.DownloadSummary
+import com.coradio.tgfetch.domain.model.view.TrackFileJobView
 import com.coradio.tgfetch.domain.port.`in`.DownloadPendingTrackFilesUseCase
 import com.coradio.tgfetch.domain.port.out.persistence.TrackFileRepositoryPort
 import com.coradio.tgfetch.domain.port.out.storage.AudioMetadataServicePort
 import com.coradio.tgfetch.domain.port.out.storage.StorageGatewayPort
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramGatewayPort
+import com.coradio.tgfetch.infrastructure.exception.InfrastructureException
+import io.github.oshai.kotlinlogging.KotlinLogging.logger
 import org.springframework.stereotype.Service
 import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
 
 @Service
 class DownloadPendingTrackFilesService(
@@ -17,45 +25,73 @@ class DownloadPendingTrackFilesService(
     private val storageGateway: StorageGatewayPort,
     private val audioMetadataService: AudioMetadataServicePort,
 ): DownloadPendingTrackFilesUseCase {
-    override suspend fun execute() {
+
+    private val log = logger {}
+    private lateinit var summary: DownloadSummary
+
+    override fun execute(): DownloadSummary {
+        log.info { "Starting download of pending track files" }
+        val startedAt = Instant.now()
+
+        summary = DownloadSummary()
 
         val pendingFiles = trackFileRepository.findAllByStatus(TrackFileStatus.PENDING)
 
         pendingFiles.forEach { trackFile ->
-            try {
-                markDownloading(trackFile)
-                val file = telegramGateway.downloadFile(trackFile.telegramFileId)
-                val storageKey = generateStorageKey(trackFile)
-                audioMetadataService.rewriteMetadata(file, trackFile.track.artist, trackFile.track.title)
-                storageGateway.upload(storageKey, Files.newInputStream(file))
-                markReady(trackFile, storageKey)
-                Files.deleteIfExists(file)
-            } catch (ex: Exception) {
-                markFailed(trackFile)
-                //TODO: Log Error
-            }
+            trackFile.id
+                ?.let {
+                    try {
+                        if(!markDownloading(trackFile.id)){
+                            log.info { "Track ${trackFile.id} already picked by another worker" }
+                            return@forEach
+                        }
+                        val file = telegramGateway.downloadFile(trackFile.telegramFileId, resolveExtension(trackFile))
+                        val storageKey = generateStorageKey(trackFile.id, file)
+                        audioMetadataService.rewriteMetadata(file, trackFile.artist, trackFile.title)
+                        if(storageGateway.exists(storageKey)){
+                            storageGateway.delete(storageKey)
+                        }
+                        storageGateway.upload(storageKey, file)
+                        markReady(trackFile.id, storageKey)
+                        Files.deleteIfExists(file)
+                        log.debug { "Downloaded ${trackFile.artist} by ${trackFile.title}" }
+                        summary.success++
+                    } catch (ex: InfrastructureException) {
+                        markFailed(trackFile.id)
+                        log.warn(ex) { "Failed to download ${trackFile.artist} - ${trackFile.title}" }
+                        summary.failed++
+                    }
+                }
         }
 
+        val duration = Duration.between(
+            startedAt,
+            Instant.now()
+        )
+        log.info { "Download completed in ${duration.toSeconds()}s. Summary: $summary" }
+
+        return summary
     }
 
-    private fun generateStorageKey(trackFile: TrackFile): String {
-        return "tracks/${trackFile.id}.${trackFile.mimeType}"
+    private fun generateStorageKey(id: UUID?, file: Path): String {
+        return "tracks/${id ?: UUID.randomUUID()}.${file.fileName.toString().substringAfterLast('.', "")}"
     }
 
-    private fun markDownloading(trackFile: TrackFile) {
-        trackFile.changeStatus(TrackFileStatus.DOWNLOADING)
-        trackFileRepository.save(trackFile)
+    private fun markDownloading(id: UUID): Boolean {
+        return trackFileRepository.updateStatus(id, TrackFileStatus.DOWNLOADING, TrackFileStatus.PENDING) ==1
     }
 
-    private fun markReady(trackFile: TrackFile, storageKey: String) {
-        trackFile.changeStatus(TrackFileStatus.READY)
-        trackFile.addStorageKey(storageKey)
-        trackFileRepository.save(trackFile)
+    private fun markFailed(id: UUID) {
+        trackFileRepository.updateStatus(id, TrackFileStatus.FAILED, TrackFileStatus.DOWNLOADING)
     }
 
-    private fun markFailed(trackFile: TrackFile) {
-        trackFile.changeStatus(TrackFileStatus.FAILED)
-        trackFileRepository.save(trackFile)
+    private fun markReady(id: UUID, storageKey: String) {
+        trackFileRepository.markReady(id, storageKey)
+    }
+
+    private fun resolveExtension(file: TrackFileJobView): String? {
+        return file.mimeType?.let(ExtensionMapper::mimeToExt)
+            ?: file.fileName?.substringAfterLast('.', "")
     }
 
 }
