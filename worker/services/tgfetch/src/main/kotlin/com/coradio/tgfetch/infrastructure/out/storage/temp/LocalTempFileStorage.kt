@@ -1,6 +1,5 @@
 package com.coradio.tgfetch.infrastructure.out.storage.temp
 
-import com.coradio.tgfetch.infrastructure.out.storage.config.StorageProperties
 import com.coradio.tgfetch.infrastructure.out.telegram.port.TempFileStorage
 import org.springframework.stereotype.Component
 import java.nio.file.Files
@@ -8,9 +7,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 @Component
-class LocalTempFileStorage(
-    private val props: StorageProperties
-) : TempFileStorage {
+class LocalTempFileStorage : TempFileStorage {
 
     override fun createTempFile(name: String, extension: String): Path {
         return Paths.get(System.getProperty("java.io.tmpdir"))

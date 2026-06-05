@@ -29,7 +29,7 @@ class SynchronizeTelegramChannelService(
     private lateinit var summary: SynchronizationSummary
 
     @Transactional
-    override suspend fun execute(channelId: Long, limit: Int): SynchronizationSummary {
+    override fun execute(channelId: Long, limit: Int): SynchronizationSummary {
         log.info { "Starting telegram synchronization" }
         val startedAt = Instant.now()
 
@@ -90,7 +90,7 @@ class SynchronizeTelegramChannelService(
         val trackFile = TrackFile(
             etag = UUID.randomUUID().toString(),
             telegramFileId = telegramTrackData.remoteFileId,
-            telegramFileUniqueId = telegramTrackData.fileUniqueId,
+            telegramFileUniqueId = telegramTrackData.uniqueFileId,
             fileName = telegramTrackData.fileName ?: "",
             fileSize = telegramTrackData.fileSizeBytes ?: 0,
             mimeType = telegramTrackData.mimeType ?: "",

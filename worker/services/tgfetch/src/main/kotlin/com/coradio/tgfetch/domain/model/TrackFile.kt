@@ -22,7 +22,7 @@ data class TrackFile(
         this.status = newStatus
     }
 
-    fun markPending(){
+    fun markPending() {
         this.status = TrackFileStatus.PENDING
         this.retryCount = 0
     }
@@ -35,8 +35,8 @@ data class TrackFile(
             changed = true
         }
 
-        if (this.telegramFileUniqueId != post.fileUniqueId) {
-            this.telegramFileUniqueId = post.fileUniqueId
+        if (this.telegramFileUniqueId != post.uniqueFileId) {
+            this.telegramFileUniqueId = post.uniqueFileId
             changed = true
         }
 
@@ -55,7 +55,7 @@ data class TrackFile(
             changed = true
         }
 
-        if(changed){
+        if (changed) {
             this.changeStatus(TrackFileStatus.PENDING)
         }
 

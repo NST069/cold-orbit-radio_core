@@ -11,7 +11,6 @@ import com.coradio.tgfetch.infrastructure.out.telegram.port.TempFileStorage
 import io.github.oshai.kotlinlogging.KotlinLogging.logger
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
-import org.springframework.web.client.body
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -29,7 +28,7 @@ class TelegramGatewayAdapter(
         restClient.get()
             .uri("/channels/by-username/{username}", username)
             .retrieve()
-            .body<ChannelInfoResponse>()
+            .body(ChannelInfoResponse::class.java)
             ?: throw TelegramException("Channel not found")
 
     override fun getMessages(
@@ -52,7 +51,7 @@ class TelegramGatewayAdapter(
                 builder.build(channelId)
             }
             .retrieve()
-            .body<MessagesResponse>()
+            .body(MessagesResponse::class.java)
             ?: throw TelegramException("Messages not found")
 
         return MessagePageMapper.toDomain(response.messages)
@@ -67,7 +66,7 @@ class TelegramGatewayAdapter(
             restClient.get()
                 .uri("/files/by-remote/{remoteFileId}", remoteFileId)
                 .retrieve()
-                .body<InputStream>()
+                .body(InputStream::class.java)
                 ?.use { input ->
                     Files.copy(input, file, StandardCopyOption.REPLACE_EXISTING)
                 } ?: throw TelegramException("File download: Empty response $remoteFileId")
@@ -84,7 +83,7 @@ class TelegramGatewayAdapter(
         restClient.get()
             .uri("/health")
             .retrieve()
-            .body<HealthResponse>()
+            .body(HealthResponse::class.java)
             ?: throw TelegramException("Health check: Empty response")
 
 }

@@ -14,7 +14,7 @@ object TelegramMessageMapper {
 
             tdFileId = audio?.tdFileId ?: 0,
             remoteFileId = audio?.remoteFileId ?: "",
-            fileUniqueId = audio?.uniqueFileId ?: "",
+            uniqueFileId = audio?.uniqueFileId ?: "",
 
             artist = audio?.performer,
             title = audio?.title,
