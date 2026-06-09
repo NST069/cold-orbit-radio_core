@@ -1,0 +1,52 @@
+## Node / JavaScript
+
+# dependencies
+node_modules/
+
+# production
+dist/
+build/
+out/
+
+# misc
+.env
+.env.*
+.pnp.*
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vite/
+/.turbo/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# testing
+coverage/
+.nyc_output/
+
+# editor and OS files
+.DS_Store
+.vscode/
+.idea/
+Thumbs.db
+
+# bundlers
+.eslintcache
+/.pnp
+
+# lockfiles (uncomment if you want to ignore lockfiles)
+## package-lock.json
+## yarn.lock
+## pnpm-lock.yaml
+
+# local env overrides
+local.env
+
+# TDLib specific
+_td*
