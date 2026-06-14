@@ -6,6 +6,9 @@ import com.coradio.rotation.infrastructure.out.persistense.mapper.PlaybackHistor
 import com.coradio.rotation.infrastructure.out.persistense.repository.PlaybackHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -20,5 +23,11 @@ public class PlaybackHistoryAdapter implements PlaybackHistoryRepositoryPort {
                         PlaybackHistoryMapper.toEntity(playbackHistoryItem)
                 )
         );
+    }
+
+    @Override
+    public List<PlaybackHistoryItem> findAllInRange(long hours) {
+        return playbackHistoryRepository.findAllByPlayedAtAfter(Instant.now().minus(hours, ChronoUnit.HOURS)).stream()
+                .map(PlaybackHistoryMapper::toDomain).toList();
     }
 }

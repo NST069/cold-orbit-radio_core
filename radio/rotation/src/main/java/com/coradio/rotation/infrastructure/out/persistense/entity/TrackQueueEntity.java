@@ -35,9 +35,12 @@ public class TrackQueueEntity {
     @Column(name = "track_id", nullable = false)
     private UUID trackId;
 
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private PlaybackStatus status;
+
+    @Column(name = "last_error")
+    private String lastError;
 
     @Column(name = "localPath")
     private String localPath;

@@ -1,8 +1,8 @@
 services:
   tgate:
     build:
-      context: ../
-      dockerfile: services/tgate/Dockerfile
+      context: ../services/tgate
+      dockerfile: Dockerfile
     container_name: cor-tgate
     restart: unless-stopped
     environment:
@@ -22,8 +22,8 @@ services:
 
   tgfetch:
     build:
-      context: ../
-      dockerfile: services/tgfetch/Dockerfile
+      context: ../services/tgfetch
+      dockerfile: Dockerfile
     container_name: cor-tgfetch
     restart: unless-stopped
     depends_on:

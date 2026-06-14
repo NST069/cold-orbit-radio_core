@@ -35,3 +35,16 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yml
 
+rotation:
+  queue:
+    min-size: 5
+    target-size: 10
+    history-hours: 1
+  playback:
+    min-size: 2
+    target-size: 10
+  jobs:
+    fill-queue-cron: "0 */5 * * * *"
+    prepare-tracks-cron: "*/30 * * * * *"
+    enqueue-tracks-cron: "*/15 * * * * *"
+    monitor-playback-cron: "*/5 * * * * *"

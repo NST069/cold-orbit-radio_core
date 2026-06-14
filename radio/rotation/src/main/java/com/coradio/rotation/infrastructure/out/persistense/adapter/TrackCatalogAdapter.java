@@ -21,12 +21,11 @@ public class TrackCatalogAdapter implements TrackCatalogPort {
     @Override
     public Optional<TrackInfo> findById(UUID trackId) {
         return jdbcClient.sql("""
-                
-                        SELECT
+                SELECT
                     t.id,
                     t.artist,
                     t.title,
-                    tf.duration,
+                    t.duration,
                     tf.storage_key
                 FROM tracks t
                 JOIN track_files tf ON tf.track_id = t.id
@@ -39,18 +38,16 @@ public class TrackCatalogAdapter implements TrackCatalogPort {
 
     @Override
     public List<TrackInfo> findPlayableTracks() {
-        return jdbcClient.sql(
-                        """
+        return jdbcClient.sql("""
                 SELECT
                     t.id,
-                                        
-                                     t.t
-                                 tf.durati
-                               tf.sto
-                                FROM tracks t
-                JOIN track_files tf
-                        ON tf.tra
-                                    WHERE tf.status = 'READY'
+                    t.artist,
+                    t.title,
+                    t.duration,
+                    tf.storage_key
+                FROM tracks t
+                JOIN track_files tf ON tf.track_id = t.id
+                WHERE tf.status = 'READY'
                 """)
                 .query(mapper)
                 .list();

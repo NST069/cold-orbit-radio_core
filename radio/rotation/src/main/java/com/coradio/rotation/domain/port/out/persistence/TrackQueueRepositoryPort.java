@@ -18,4 +18,26 @@ public interface TrackQueueRepositoryPort {
     void deleteById(UUID id);
 
     int deleteAllByStatus(PlaybackStatus status);
+
+    int countQueued();
+
+    List<UUID> findActiveTrackIds();
+
+    void markDownloading(UUID id);
+
+    void markFailed(UUID id, String reason);
+
+    void markQueued(UUID id);
+
+    void markReady(UUID id, String localPath);
+
+    void markPlaying(UUID id);
+
+    void markPlayed(UUID id);
+
+    List<TrackQueueItem> findReadyTracks(int limit);
+
+    Optional<TrackQueueItem> findByLocalPath(String localPath);
+
+    Optional<TrackQueueItem> findPlayingTrack();
 }

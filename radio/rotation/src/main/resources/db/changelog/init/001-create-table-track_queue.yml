@@ -23,6 +23,9 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
+                  name: last_error
+                  type: text
+              - column:
                   name: local_path
                   type: text
               - column:

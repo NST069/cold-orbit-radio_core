@@ -1,7 +1,10 @@
 package com.coradio.rotation.domain.port.out.persistence;
 
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
+import java.util.List;
 
 public interface PlaybackHistoryRepositoryPort {
     PlaybackHistoryItem save(PlaybackHistoryItem playbackHistoryItem);
+
+    List<PlaybackHistoryItem> findAllInRange(long hours);
 }
