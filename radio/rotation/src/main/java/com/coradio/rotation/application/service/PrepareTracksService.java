@@ -1,6 +1,7 @@
 package com.coradio.rotation.application.service;
 
 import com.coradio.rotation.application.dto.TrackInfo;
+import com.coradio.rotation.application.exception.FileDownloadingException;
 import com.coradio.rotation.application.exception.PlaybackPreparationException;
 import com.coradio.rotation.application.exception.TrackNotFoundException;
 import com.coradio.rotation.domain.enums.PlaybackStatus;
@@ -44,12 +45,13 @@ public class PrepareTracksService implements PrepareTracksUseCase {
                     .orElseThrow(() -> new TrackNotFoundException(queueItem.trackId().toString()));
 
             String localPath = storageGateway.downloadFile(track.storageKey());
+            if(localPath.isBlank()) throw new FileDownloadingException(track.storageKey());
 
             markReady(queueItem.id(), localPath);
             log.debug("Track is ready: {}", queueItem.trackId());
         } catch (PlaybackPreparationException ex) {
             markFailed(queueItem.id(), ex.getMessage());
-            log.error("Failed to put track({}) to Liquidsoap queue", queueItem.trackId().toString(), ex);
+            log.error("Failed to prepare track {}", queueItem.trackId().toString(), ex);
         }
     }
 
