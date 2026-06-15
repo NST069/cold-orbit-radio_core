@@ -57,7 +57,7 @@ public class MonitorPlaybackService implements MonitorPlaybackUseCase {
         }
     }
 
-    public void markPlaying(TrackQueueItem queueItem) {
+    private void markPlaying(TrackQueueItem queueItem) {
         trackQueueRepository.markPlaying(queueItem.id());
         TrackInfo track = trackCatalogPort.findById(queueItem.trackId())
                 .orElseThrow(() -> new TrackNotFoundException(queueItem.trackId().toString()));
@@ -65,7 +65,7 @@ public class MonitorPlaybackService implements MonitorPlaybackUseCase {
         playbackHistoryRepository.save(historyItem);
     }
 
-    public void markPlayed(UUID id) {
+    private void markPlayed(UUID id) {
         trackQueueRepository.markPlayed(id);
     }
 

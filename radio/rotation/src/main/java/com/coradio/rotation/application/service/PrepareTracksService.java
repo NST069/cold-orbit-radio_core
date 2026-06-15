@@ -36,7 +36,7 @@ public class PrepareTracksService implements PrepareTracksUseCase {
 
     }
 
-    public void prepareTrack(TrackQueueItem queueItem) {
+    private void prepareTrack(TrackQueueItem queueItem) {
         try {
             markDownloading(queueItem.id());
             log.debug("Downloading track: {}", queueItem.trackId());
@@ -55,15 +55,15 @@ public class PrepareTracksService implements PrepareTracksUseCase {
         }
     }
 
-    public void markDownloading(UUID id) {
+    private void markDownloading(UUID id) {
         trackQueueRepository.markDownloading(id);
     }
 
-    public void markFailed(UUID id, String reason) {
+    private void markFailed(UUID id, String reason) {
         trackQueueRepository.markFailed(id, reason);
     }
 
-    public void markReady(UUID id, String localPath) {
+    private void markReady(UUID id, String localPath) {
         trackQueueRepository.markReady(id, localPath);
     }
 

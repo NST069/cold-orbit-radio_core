@@ -15,7 +15,7 @@ public class RandomTrackSelectionStrategy implements TrackSelectionStrategy {
 
     @Override
     public List<TrackInfo> selectTracks(List<TrackInfo> candidates, int count, List<PlaybackHistoryItem> history) {
-        if (count <= 0 || candidates.isEmpty()) {
+        if (candidates.isEmpty()) {
             return List.of();
         }
 
@@ -24,7 +24,7 @@ public class RandomTrackSelectionStrategy implements TrackSelectionStrategy {
         Collections.shuffle(shuffled);
 
         return shuffled.stream()
-                .limit(count)
+                .limit(count > 0 ? count : 1)
                 .toList();
     }
 }

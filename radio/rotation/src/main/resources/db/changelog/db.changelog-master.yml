@@ -1,3 +1,7 @@
 databaseChangeLog:
   - includeAll:
       path: db/changelog/init
+
+  - includeAll:
+      path: db/changelog/testTables
+      context: test

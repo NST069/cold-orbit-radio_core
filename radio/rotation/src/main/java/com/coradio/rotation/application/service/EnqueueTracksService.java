@@ -47,11 +47,11 @@ public class EnqueueTracksService implements EnqueueTracksUseCase {
         });
     }
 
-    public void markQueued(UUID id) {
+    private void markQueued(UUID id) {
         trackQueueRepository.markQueued(id);
     }
 
-    public void markFailed(UUID id, String reason) {
+    private void markFailed(UUID id, String reason) {
         trackQueueRepository.markFailed(id, reason);
     }
 

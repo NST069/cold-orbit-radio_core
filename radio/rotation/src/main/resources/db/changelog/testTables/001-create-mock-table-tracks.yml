@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-tracks
+      author: NiKryukov
+      context: test
+      changes:
+        - createTable:
+            tableName: tracks
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: artist
+                  type: varchar(255)
+              - column:
+                  name: title
+                  type: varchar(255)
+              - column:
+                  name: duration
+                  type: integer
