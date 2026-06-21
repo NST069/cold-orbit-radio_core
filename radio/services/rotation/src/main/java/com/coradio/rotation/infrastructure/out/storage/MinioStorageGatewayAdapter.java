@@ -48,6 +48,8 @@ public class MinioStorageGatewayAdapter implements StorageGatewayPort {
                 Files.copy(is, targetPath, StandardCopyOption.REPLACE_EXISTING);
             }
 
+            log.debug("Downloaded file: {}", targetPath);
+
             return targetPath.toString();
 
         } catch (Exception ex) {

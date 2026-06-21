@@ -1,7 +1,6 @@
 package com.coradio.rotation.infrastructure.out.liquidsoap;
 
 import com.coradio.rotation.domain.port.out.liquidsoap.PlaybackEnginePort;
-import com.coradio.rotation.infrastructure.out.liquidsoap.config.LiquidsoapProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -14,8 +13,6 @@ import java.util.function.Predicate;
 public class LiquidsoapTelnetAdapter implements PlaybackEnginePort {
 
     private final LiquidsoapClient client;
-
-    private final LiquidsoapProperties properties;
 
     @Override
     public int getQueueLength() {

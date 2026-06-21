@@ -39,9 +39,7 @@ public class TelnetLiquidsoapClient implements LiquidsoapClient {
             String line;
 
             while ((line = reader.readLine()) != null) {
-                if ("END".equals(line))
-                    break;
-
+                if ("END".equals(line)) break;
                 response.append(line).append('\n');
             }
 
@@ -52,10 +50,7 @@ public class TelnetLiquidsoapClient implements LiquidsoapClient {
             return result;
 
         } catch (IOException ex) {
-            throw new PlaybackEngineException(
-                    "Failed to execute command: " + command,
-                    ex
-            );
+            throw new PlaybackEngineException("Failed to execute command: " + command, ex);
         }
     }
 
@@ -63,7 +58,6 @@ public class TelnetLiquidsoapClient implements LiquidsoapClient {
     public boolean isAvailable() {
 
         try (Socket socket = new Socket()) {
-
             socket.connect(
                     new InetSocketAddress(
                             properties.host(),
@@ -71,13 +65,9 @@ public class TelnetLiquidsoapClient implements LiquidsoapClient {
                     ),
                     properties.timeout()
             );
-
             return true;
-
         } catch (IOException ex) {
-
             log.debug("Liquidsoap is unavailable", ex);
-
             return false;
         }
     }
