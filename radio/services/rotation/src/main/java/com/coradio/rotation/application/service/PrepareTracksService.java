@@ -45,7 +45,7 @@ public class PrepareTracksService implements PrepareTracksUseCase {
                     .orElseThrow(() -> new TrackNotFoundException(queueItem.trackId().toString()));
 
             String localPath = storageGateway.downloadFile(track.storageKey());
-            if(localPath.isBlank()) throw new FileDownloadingException(track.storageKey());
+            if (localPath.isBlank()) throw new FileDownloadingException(track.storageKey());
 
             markReady(queueItem.id(), localPath);
             log.debug("Track is ready: {}", queueItem.trackId());

@@ -36,6 +36,18 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yml
     contexts: prod
 
+storage:
+  endpoint: ${STORAGE_ENDPOINT}
+  access-key: ${STORAGE_ACCESS_KEY}
+  secret-key: ${STORAGE_SECRET_KEY}
+  bucket: cold-orbit-radio
+  local-path: ${STORAGE_LOCAL_PATH:${java.io.tmpdir}}
+
+liquidsoap:
+  host: ${LIQUIDSOAP_HOST}
+  port: ${LIQUIDSOAP_PORT}
+  timeout: 5000
+
 rotation:
   queue:
     min-size: 5
