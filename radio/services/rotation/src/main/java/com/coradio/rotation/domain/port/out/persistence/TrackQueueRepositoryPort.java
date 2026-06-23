@@ -2,6 +2,7 @@ package com.coradio.rotation.domain.port.out.persistence;
 
 import com.coradio.rotation.domain.enums.PlaybackStatus;
 import com.coradio.rotation.domain.model.TrackQueueItem;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,4 +41,8 @@ public interface TrackQueueRepositoryPort {
     Optional<TrackQueueItem> findByLocalPath(String localPath);
 
     Optional<TrackQueueItem> findPlayingTrack();
+
+    List<TrackQueueItem> findAllForDeletionBefore(Instant threshold);
+
+    List<String> findAllLocalPaths();
 }

@@ -11,7 +11,8 @@ public class TrackQueueMapper {
                 trackQueueEntity.getTrackId(),
                 trackQueueEntity.getStatus(),
                 trackQueueEntity.getLocalPath(),
-                trackQueueEntity.getCreatedAt()
+                trackQueueEntity.getCreatedAt(),
+                trackQueueEntity.getPlayedAt()
         );
     }
 
@@ -22,6 +23,7 @@ public class TrackQueueMapper {
                 .status(trackQueueItem.status())
                 .localPath(trackQueueItem.localPath())
                 .createdAt(trackQueueItem.createdAt())
+                .playedAt(trackQueueItem.playedAt())
                 .build();
     }
 }

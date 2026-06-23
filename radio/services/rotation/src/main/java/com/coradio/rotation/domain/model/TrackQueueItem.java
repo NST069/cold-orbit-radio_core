@@ -9,6 +9,7 @@ public record TrackQueueItem(
         UUID trackId,
         PlaybackStatus status,
         String localPath,
-        Instant createdAt
+        Instant createdAt,
+        Instant playedAt
 ) {
 }

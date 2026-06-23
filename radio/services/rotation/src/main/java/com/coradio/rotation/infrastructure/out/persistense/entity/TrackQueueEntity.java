@@ -49,4 +49,7 @@ public class TrackQueueEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "played_at", nullable = false)
+    private Instant playedAt;
+
 }

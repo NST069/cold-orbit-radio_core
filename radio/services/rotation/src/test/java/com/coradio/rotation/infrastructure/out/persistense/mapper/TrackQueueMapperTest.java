@@ -23,6 +23,7 @@ class TrackQueueMapperTest {
                 .status(PlaybackStatus.QUEUED)
                 .localPath("/music/test.mp3")
                 .createdAt(createdAt)
+                .playedAt(null)
                 .build();
 
         TrackQueueItem result = TrackQueueMapper.toDomain(entity);
@@ -46,7 +47,8 @@ class TrackQueueMapperTest {
                 trackId,
                 PlaybackStatus.READY,
                 "/music/test.mp3",
-                createdAt
+                createdAt,
+                null
         );
 
         TrackQueueEntity result = TrackQueueMapper.toEntity(item);

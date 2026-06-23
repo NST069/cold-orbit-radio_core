@@ -35,20 +35,22 @@ class DownloadPendingTrackFilesService(
 
         summary = DownloadSummary()
 
+        markPending();
+
         val pendingFiles = trackFileRepository.findAllByStatus(TrackFileStatus.PENDING)
 
         pendingFiles.forEach { trackFile ->
             trackFile.id
                 ?.let {
                     try {
-                        if(!markDownloading(trackFile.id)){
+                        if (!markDownloading(trackFile.id)) {
                             log.info { "Track ${trackFile.id} already picked by another worker" }
                             return@forEach
                         }
                         val file = telegramGateway.downloadFile(trackFile.telegramFileId, resolveExtension(trackFile))
                         val storageKey = generateStorageKey(trackFile.id, file)
                         audioMetadataService.rewriteMetadata(file, trackFile.artist, trackFile.title)
-                        if(storageGateway.exists(storageKey)){
+                        if (storageGateway.exists(storageKey)) {
                             storageGateway.delete(storageKey)
                         }
                         storageGateway.upload(storageKey, file)
@@ -77,8 +79,18 @@ class DownloadPendingTrackFilesService(
         return "tracks/${id ?: UUID.randomUUID()}.${file.fileName.toString().substringAfterLast('.', "")}"
     }
 
+    private fun markPending() {
+        val createdFiles = trackFileRepository.findAllByStatus(TrackFileStatus.CREATED)
+        createdFiles.forEach { trackFile ->
+            trackFile.id
+                ?.let {
+                    trackFileRepository.updateStatus(trackFile.id, TrackFileStatus.PENDING, TrackFileStatus.CREATED)
+                }
+        }
+    }
+
     private fun markDownloading(id: UUID): Boolean {
-        return trackFileRepository.updateStatus(id, TrackFileStatus.DOWNLOADING, TrackFileStatus.PENDING) ==1
+        return trackFileRepository.updateStatus(id, TrackFileStatus.DOWNLOADING, TrackFileStatus.PENDING) == 1
     }
 
     private fun markFailed(id: UUID) {

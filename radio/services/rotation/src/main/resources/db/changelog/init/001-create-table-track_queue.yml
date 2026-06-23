@@ -33,3 +33,6 @@ databaseChangeLog:
                   type: timestamptz
                   constraints:
                     nullable: false
+              - column:
+                  name: played_at
+                  type: timestamptz

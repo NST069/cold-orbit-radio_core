@@ -8,6 +8,7 @@ import com.coradio.rotation.infrastructure.out.persistense.mapper.TrackQueueMapp
 import com.coradio.rotation.infrastructure.out.persistense.repository.TrackQueueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -95,7 +96,7 @@ public class TrackQueueAdapter implements TrackQueueRepositoryPort {
 
     @Override
     public void markPlayed(UUID id) {
-        trackQueueRepository.markPlayed(id);
+        trackQueueRepository.markPlayed(id, Instant.now());
     }
 
     @Override
@@ -107,11 +108,24 @@ public class TrackQueueAdapter implements TrackQueueRepositoryPort {
 
     @Override
     public Optional<TrackQueueItem> findByLocalPath(String localPath) {
-        return trackQueueRepository.findByLocalPath(localPath);
+        return trackQueueRepository.findByLocalPath(localPath)
+                .map(TrackQueueMapper::toDomain);
     }
 
     @Override
     public Optional<TrackQueueItem> findPlayingTrack() {
-        return trackQueueRepository.findByStatus(PlaybackStatus.PLAYING);
+        return trackQueueRepository.findByStatus(PlaybackStatus.PLAYING)
+                .map(TrackQueueMapper::toDomain);
+    }
+
+    @Override
+    public List<TrackQueueItem> findAllForDeletionBefore(Instant threshold) {
+        return trackQueueRepository.findAllForDeletionBefore(threshold).stream()
+                .map(TrackQueueMapper::toDomain).toList();
+    }
+
+    @Override
+    public List<String> findAllLocalPaths() {
+        return trackQueueRepository.findAllLocalPaths();
     }
 }

@@ -60,7 +60,7 @@ class MonitorPlaybackServiceTest {
         UUID trackId = UUID.randomUUID();
         UUID queueId = UUID.randomUUID();
         String path = "/music/a.mp3";
-        TrackQueueItem current = new TrackQueueItem(queueId, trackId, PlaybackStatus.QUEUED, path, Instant.now());
+        TrackQueueItem current = new TrackQueueItem(queueId, trackId, PlaybackStatus.QUEUED, path, Instant.now(), null);
         TrackInfo trackInfo = new TrackInfo(trackId, "Artist", "Title", 180, "storage-key");
 
         when(playbackEngine.getCurrentTrack()).thenReturn(Optional.of(path));
@@ -80,7 +80,7 @@ class MonitorPlaybackServiceTest {
         UUID trackId = UUID.randomUUID();
         UUID queueId = UUID.randomUUID();
         String path = "/music/a.mp3";
-        TrackQueueItem current = new TrackQueueItem(queueId, trackId, PlaybackStatus.PLAYING, path, Instant.now());
+        TrackQueueItem current = new TrackQueueItem(queueId, trackId, PlaybackStatus.PLAYING, path, Instant.now(), null);
 
         when(playbackEngine.getCurrentTrack()).thenReturn(Optional.of(path));
         when(trackQueueRepository.findByLocalPath(path)).thenReturn(Optional.of(current));
@@ -99,8 +99,8 @@ class MonitorPlaybackServiceTest {
         UUID currentTrackId = UUID.randomUUID();
         UUID playingQueueId = UUID.randomUUID();
         UUID currentQueueId = UUID.randomUUID();
-        TrackQueueItem playing = new TrackQueueItem(playingQueueId, playingTrackId, PlaybackStatus.PLAYING, "/music/a.mp3", Instant.now());
-        TrackQueueItem current = new TrackQueueItem(currentQueueId, currentTrackId, PlaybackStatus.QUEUED, "/music/b.mp3", Instant.now());
+        TrackQueueItem playing = new TrackQueueItem(playingQueueId, playingTrackId, PlaybackStatus.PLAYING, "/music/a.mp3", Instant.now(), null);
+        TrackQueueItem current = new TrackQueueItem(currentQueueId, currentTrackId, PlaybackStatus.QUEUED, "/music/b.mp3", Instant.now(), null);
         TrackInfo currentTrackInfo = new TrackInfo(currentTrackId, "Artist", "Title", 180, "storage-key");
 
         when(playbackEngine.getCurrentTrack()).thenReturn(Optional.of("/music/b.mp3"));

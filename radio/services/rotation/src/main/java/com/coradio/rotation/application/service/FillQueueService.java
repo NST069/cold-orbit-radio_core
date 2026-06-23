@@ -49,7 +49,7 @@ public class FillQueueService implements FillQueueUseCase {
         List<TrackInfo> selected = trackSelectionStrategy.selectTracks(candidates, requiredTracks, history);
 
         selected.stream()
-                .map(track -> new TrackQueueItem(null, track.id(), PlaybackStatus.CREATED, null, Instant.now()))
+                .map(track -> new TrackQueueItem(null, track.id(), PlaybackStatus.CREATED, null, Instant.now(), null))
                 .forEach(trackQueueRepository::save);
         log.debug("Added {} tracks to queue", selected.size());
     }

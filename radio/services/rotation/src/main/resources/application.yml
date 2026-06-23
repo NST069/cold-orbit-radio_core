@@ -56,8 +56,17 @@ rotation:
   playback:
     min-size: 2
     target-size: 10
+  gc:
+    processed-retention: PT1H
+    orphan-retention: PT1H
   jobs:
     fill-queue-cron: "0 */5 * * * *"
     prepare-tracks-cron: "*/30 * * * * *"
     enqueue-tracks-cron: "*/15 * * * * *"
     monitor-playback-cron: "*/5 * * * * *"
+    gc-processed-cron: "0 */15 * * * *"
+    gc-orphan-cron: "0 0 * * * *"
+
+logging:
+  level:
+    com.coradio.rotation: DEBUG

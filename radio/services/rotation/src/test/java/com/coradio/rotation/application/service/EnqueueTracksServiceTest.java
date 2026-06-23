@@ -56,8 +56,8 @@ class EnqueueTracksServiceTest {
     void enqueueTracks_needTracks_shouldEnqueueTracks() {
         UUID firstId = UUID.randomUUID();
         UUID secondId = UUID.randomUUID();
-        TrackQueueItem first = new TrackQueueItem(firstId, UUID.randomUUID(), PlaybackStatus.READY, "/music/1.mp3", Instant.now());
-        TrackQueueItem second = new TrackQueueItem(secondId, UUID.randomUUID(), PlaybackStatus.READY, "/music/2.mp3", Instant.now());
+        TrackQueueItem first = new TrackQueueItem(firstId, UUID.randomUUID(), PlaybackStatus.READY, "/music/1.mp3", Instant.now(), null);
+        TrackQueueItem second = new TrackQueueItem(secondId, UUID.randomUUID(), PlaybackStatus.READY, "/music/2.mp3", Instant.now(), null);
 
         when(playbackEngine.getQueueLength()).thenReturn(8);
         when(properties.targetSize()).thenReturn(10);
@@ -76,7 +76,7 @@ class EnqueueTracksServiceTest {
     @Test
     void enqueueTracks_enqueueFailed_shouldMarkFailed() {
         UUID queueId = UUID.randomUUID();
-        TrackQueueItem item = new TrackQueueItem(queueId, UUID.randomUUID(), PlaybackStatus.READY, "/music/1.mp3", Instant.now());
+        TrackQueueItem item = new TrackQueueItem(queueId, UUID.randomUUID(), PlaybackStatus.READY, "/music/1.mp3", Instant.now(), null);
 
         when(playbackEngine.getQueueLength()).thenReturn(0);
         when(properties.targetSize()).thenReturn(10);
@@ -94,8 +94,8 @@ class EnqueueTracksServiceTest {
     void enqueueTracks_oneTrackFailed_shouldProcessOthers() {
         UUID firstQueueId = UUID.randomUUID();
         UUID secondQueueId = UUID.randomUUID();
-        TrackQueueItem first = new TrackQueueItem(firstQueueId, UUID.randomUUID(), PlaybackStatus.READY, "/music/1.mp3", Instant.now());
-        TrackQueueItem second = new TrackQueueItem(secondQueueId, UUID.randomUUID(), PlaybackStatus.READY, "/music/2.mp3", Instant.now());
+        TrackQueueItem first = new TrackQueueItem(firstQueueId, UUID.randomUUID(), PlaybackStatus.READY, "/music/1.mp3", Instant.now(), null);
+        TrackQueueItem second = new TrackQueueItem(secondQueueId, UUID.randomUUID(), PlaybackStatus.READY, "/music/2.mp3", Instant.now(), null);
 
         when(playbackEngine.getQueueLength()).thenReturn(8);
         when(properties.targetSize()).thenReturn(10);

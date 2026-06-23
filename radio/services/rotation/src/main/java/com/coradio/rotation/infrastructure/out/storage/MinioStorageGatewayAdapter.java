@@ -3,18 +3,17 @@ package com.coradio.rotation.infrastructure.out.storage;
 import com.coradio.rotation.application.exception.FileDownloadingException;
 import com.coradio.rotation.domain.port.out.storage.StorageGatewayPort;
 import com.coradio.rotation.infrastructure.out.storage.config.StorageProperties;
-import io.minio.DownloadObjectArgs;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -30,7 +29,7 @@ public class MinioStorageGatewayAdapter implements StorageGatewayPort {
         try {
             Path targetPath = Paths.get(
                     properties.localPath(),
-                    storageKey
+                    UUID.randomUUID().toString()
             );
 
             if (Files.exists(targetPath)) return targetPath.toString();

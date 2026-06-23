@@ -106,21 +106,6 @@ class MinioStorageGatewayAdapterIntegrationTest {
     }
 
     @Test
-    void shouldNotDownloadExistingFile() throws Exception {
-
-        String storageKey = "tracks/test.mp3";
-
-        Path file = tempDir.resolve(storageKey);
-
-        Files.createDirectories(file.getParent());
-        Files.writeString(file, "cached");
-
-        String path = adapter.downloadFile(storageKey);
-
-        assertEquals("cached", Files.readString(Path.of(path)));
-    }
-
-    @Test
     void shouldThrowExceptionWhenObjectNotFound() {
 
         assertThrows(
