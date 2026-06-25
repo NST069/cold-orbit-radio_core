@@ -4,9 +4,11 @@ import com.coradio.rotation.application.dto.TrackInfo;
 import com.coradio.rotation.application.exception.PlaybackPreparationException;
 import com.coradio.rotation.application.exception.QueueItemNotFoundException;
 import com.coradio.rotation.application.exception.TrackNotFoundException;
+import com.coradio.rotation.domain.enums.PlaybackStatus;
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
 import com.coradio.rotation.domain.model.TrackQueueItem;
 import com.coradio.rotation.domain.port.in.MonitorPlaybackUseCase;
+import com.coradio.rotation.domain.port.in.PlaybackResyncUseCase;
 import com.coradio.rotation.domain.port.out.liquidsoap.PlaybackEnginePort;
 import com.coradio.rotation.domain.port.out.persistence.PlaybackHistoryRepositoryPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackCatalogPort;
@@ -15,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -30,9 +33,17 @@ public class MonitorPlaybackService implements MonitorPlaybackUseCase {
 
     private final PlaybackHistoryRepositoryPort playbackHistoryRepository;
 
+    private final PlaybackResyncUseCase playbackResyncService;
+
     @Override
     public void monitorPlayback() {
         try {
+
+            if (playbackEngine.getQueueLength() == 0 && trackQueueRepository.existsByStatusIn(List.of(PlaybackStatus.PLAYING, PlaybackStatus.QUEUED))) {
+                playbackResyncService.resync();
+                return;
+            }
+
             String currentTrack = playbackEngine.getCurrentTrack().orElse(null);
             if (currentTrack == null) return;
 

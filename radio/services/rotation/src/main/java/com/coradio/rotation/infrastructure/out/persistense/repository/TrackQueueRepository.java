@@ -123,4 +123,17 @@ public interface TrackQueueRepository extends JpaRepository<TrackQueueEntity, UU
         from TrackQueueEntity t
     """)
     List<String> findAllLocalPaths();
+
+    @Query(
+            """
+            select t
+            from TrackQueueEntity t
+            where t.status = com.coradio.rotation.domain.enums.PlaybackStatus.QUEUED
+                or t.status = com.coradio.rotation.domain.enums.PlaybackStatus.PLAYING
+            order by t.createdAt
+        """
+    )
+    List<TrackQueueEntity> findAllQueuedOrPlayingOrderByCreatedAt();
+
+    boolean existsByStatusIn(List<PlaybackStatus> statuses);
 }

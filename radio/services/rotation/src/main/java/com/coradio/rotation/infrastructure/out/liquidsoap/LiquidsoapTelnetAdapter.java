@@ -33,6 +33,16 @@ public class LiquidsoapTelnetAdapter implements PlaybackEnginePort {
         client.execute("coldorbit.push " + normalizePath(localPath));
     }
 
+    @Override
+    public boolean isAvailable() {
+        try {
+            client.execute("version");
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
     private String normalizePath(String path) {
         return path.replace("\\", "/");
     }

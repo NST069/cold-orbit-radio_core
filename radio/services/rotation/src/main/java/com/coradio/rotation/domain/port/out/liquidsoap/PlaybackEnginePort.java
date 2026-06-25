@@ -10,4 +10,6 @@ public interface PlaybackEnginePort {
 
     void enqueue(String localPath);
 
+    boolean isAvailable();
+
 }

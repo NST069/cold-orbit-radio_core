@@ -45,4 +45,8 @@ public interface TrackQueueRepositoryPort {
     List<TrackQueueItem> findAllForDeletionBefore(Instant threshold);
 
     List<String> findAllLocalPaths();
+
+    List<TrackQueueItem> findAllQueuedOrPlayingOrderByCreatedAt();
+
+    boolean existsByStatusIn(List<PlaybackStatus> statuses);
 }

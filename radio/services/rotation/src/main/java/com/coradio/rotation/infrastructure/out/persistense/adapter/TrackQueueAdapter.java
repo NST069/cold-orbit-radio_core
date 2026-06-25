@@ -128,4 +128,15 @@ public class TrackQueueAdapter implements TrackQueueRepositoryPort {
     public List<String> findAllLocalPaths() {
         return trackQueueRepository.findAllLocalPaths();
     }
+
+    @Override
+    public List<TrackQueueItem> findAllQueuedOrPlayingOrderByCreatedAt() {
+        return trackQueueRepository.findAllQueuedOrPlayingOrderByCreatedAt().stream()
+                .map(TrackQueueMapper::toDomain).toList();
+    }
+
+    @Override
+    public boolean existsByStatusIn(List<PlaybackStatus> statuses) {
+        return trackQueueRepository.existsByStatusIn(statuses);
+    }
 }
