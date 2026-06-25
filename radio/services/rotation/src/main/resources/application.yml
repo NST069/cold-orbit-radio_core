@@ -1,9 +1,9 @@
 server:
-  port: ${TGFETCH_PORT:8080}
+  port: ${ROTATION_PORT:8080}
 
 spring:
   application:
-    name: tgfetch
+    name: rotation
   profiles:
     default: ${APP_PROFILE:default}
   config:
@@ -34,24 +34,39 @@ spring:
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yml
-
-telegram:
-  channel-id: ${TELEGRAM_CHANNEL_ID}
-  service:
-    base-url: ${TGATE_BASE_URL:http://localhost:3000}
-    connect-timeout: 5s
-    read-timeout: 5m
+    contexts: prod
 
 storage:
   endpoint: ${STORAGE_ENDPOINT}
   access-key: ${STORAGE_ACCESS_KEY}
   secret-key: ${STORAGE_SECRET_KEY}
   bucket: cold-orbit-radio
+  local-path: ${STORAGE_LOCAL_PATH:${java.io.tmpdir}}
 
-jobs:
-  sync:
-    cron: "0 0 * * * *"
-  downloads:
-    cron: "0 */5 * * * *"
-  retry:
-    cron: "0 */15 * * * *"
+liquidsoap:
+  host: ${LIQUIDSOAP_HOST}
+  port: ${LIQUIDSOAP_PORT}
+  timeout: 5000
+
+rotation:
+  queue:
+    min-size: 5
+    target-size: 10
+    history-hours: 1
+  playback:
+    min-size: 2
+    target-size: 10
+  gc:
+    processed-retention: PT1H
+    orphan-retention: PT1H
+  jobs:
+    fill-queue-cron: "0 */5 * * * *"
+    prepare-tracks-cron: "*/30 * * * * *"
+    enqueue-tracks-cron: "*/15 * * * * *"
+    monitor-playback-cron: "*/5 * * * * *"
+    gc-processed-cron: "0 */15 * * * *"
+    gc-orphan-cron: "0 0 * * * *"
+
+logging:
+  level:
+    com.coradio.rotation: DEBUG
