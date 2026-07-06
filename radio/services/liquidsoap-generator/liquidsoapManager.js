@@ -59,6 +59,7 @@ const validateScript = async (scriptPath) => {
         })
 
         child.on('close', (code) => {
+            console.log(stdout, stderr)
             if (code === 0) {
                 resolve({
                     valid: true,

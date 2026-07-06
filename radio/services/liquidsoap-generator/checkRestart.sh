@@ -9,7 +9,7 @@ SCRIPT_PATH="$1"
 CONFIG_DIR=$(dirname "$SCRIPT_PATH")
 CURRENT_SCRIPT="$CONFIG_DIR/radio.liq"
 NEW_SCRIPT="$CONFIG_DIR/radio_new.liq"
-CONTAINER="cor_liquidsoap"
+CONTAINER="cor-liquidsoap"
 
 # 1. Валидация
 if ! liquidsoap --check "$NEW_SCRIPT"; then
