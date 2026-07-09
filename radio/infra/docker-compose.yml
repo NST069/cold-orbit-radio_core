@@ -72,6 +72,7 @@ services:
       ICECAST_PORT: 8000
       ICECAST_MOUNT: radio.mp3
       LIQUIDSOAP_SCRIPT_PATH: /app/liquidsoap/
+      LIQUIDSOAP_IMAGE: savonet/liquidsoap:v2.4.2
       WEBHOOK_URL: ${WEBHOOK_URL}
     command: >
       sh -c "

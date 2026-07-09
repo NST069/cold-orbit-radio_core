@@ -25,8 +25,6 @@ set("server.telnet.bind_addr", "0.0.0.0")
 crossfade_duration = 3.0
 blank_duration = 10.0
 
-# webhook_url = "{{WEBHOOK_URL}}"
-
 icecast_host = "{{ICECAST_HOST}}"
 icecast_port = {{ICECAST_PORT}}
 icecast_password = "{{ICECAST_PASSWORD}}"
@@ -75,6 +73,93 @@ output.icecast(
 )
 
 ##############################################################################
+# Webhook
+##############################################################################
+
+webhook_url = "{{WEBHOOK_URL}}"
+
+current_track_metadata = ref([])
+current_track_uri = ref("")
+
+def metadata_value(track_metadata, key) =
+  track_metadata[key] ?? ""
+end
+
+def current_uri() =
+  cur = queue_source.current()
+  log("cur : #{cur}")
+  log("uri : #{request.uri(null.get(cur))}")
+
+  uri = null.case(
+    queue_source.current(),
+    fun() -> "",
+    fun(r) -> request.uri(r)
+  )
+  log("#{uri}")
+  # q = queue_source.queue()
+  # if list.length(q) == 0 then
+  #   ""
+  # else
+  #   request.uri(list.hd(q))
+  # end
+  uri
+end
+
+def webhook_send(event_type, track_metadata, track_uri) =
+  if webhook_url != "" then
+    track_artist   = metadata_value(track_metadata, "artist")
+    track_title    = metadata_value(track_metadata, "title")
+    track_album    = metadata_value(track_metadata, "album")
+    track_duration = metadata_value(track_metadata, "duration")
+    track_genre    = metadata_value(track_metadata, "genre")
+
+    obj = json()
+
+    obj.add("event", event_type)
+    obj.add("timestamp", int_of_float(time()))
+    obj.add("artist", track_artist)
+    obj.add("title", track_title)
+    obj.add("album", track_album)
+    obj.add("duration", track_duration)
+    obj.add("genre", track_genre)
+    obj.add("uri", track_uri)
+
+    payload = obj.stringify(compact=true)
+
+    try
+      response =
+        http.post(
+          webhook_url,
+          data=payload,
+          headers=[
+            ("Content-Type", "application/json"),
+            ("User-Agent", "ColdOrbitRadio/Liquidsoap")
+          ]
+        )
+
+      log("Webhook #{event_type} response: #{response}")
+    catch err do
+      log("Error sending webhook #{event_type}: #{err}")
+    end
+  end
+end
+
+def notify_track_start(track_metadata) =
+  if current_track_metadata() != [] then
+    webhook_send("track_end", current_track_metadata(), current_track_uri())
+  end
+
+  uri = current_uri()
+
+  current_track_metadata := track_metadata
+  current_track_uri := uri
+
+  webhook_send("track_start", track_metadata, uri)
+end
+
+queue_source.on_track(synchronous=false, notify_track_start)
+
+##############################################################################
 # Internal API
 ##############################################################################
 
@@ -92,12 +177,7 @@ server.register(
 
 # Current track
 def queue_current(_) =
-  q = queue_source.queue()
-  if list.length(q) == 0 then
-    ""
-  else
-    request.uri(list.hd(q))
-  end
+  current_uri()
 end
 server.register(
   namespace="coldorbit",

@@ -5,3 +5,7 @@ databaseChangeLog:
   - includeAll:
       path: db/changelog/testTables
       context: test
+
+  # 2026-07-09 rewriting-liquidsoap
+  - includeAll:
+      path: db/changelog/2026-07-09

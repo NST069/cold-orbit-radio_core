@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y \
     bash \
     docker.io \
     sudo \
-    liquidsoap \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ./package*.json ./
