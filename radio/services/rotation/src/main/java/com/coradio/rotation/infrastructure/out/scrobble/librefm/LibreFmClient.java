@@ -33,6 +33,7 @@ public class LibreFmClient {
             authenticator.invalidate();
 
             session = authenticator.authenticate();
+            form = buildNowPlayingParams(session, historyItem);
 
             execute(session.nowPlayingUrl(), form);
         }
@@ -51,6 +52,7 @@ public class LibreFmClient {
             authenticator.invalidate();
 
             session = authenticator.authenticate();
+            form = buildScrobbleParams(session, historyItem);
 
             execute(session.submissionUrl(), form);
         }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.client.RestClient;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
 
 @Component
@@ -19,6 +20,7 @@ public class LibreFmAuthenticator {
     private static final String CLIENT_ID = "cor";
     private static final String CLIENT_VERSION = "1.0";
 
+    private final Clock clock;
     private final RestClient restClient;
     private final LibreFmSessionHolder sessionHolder;
     private final LibreFmProperties properties;
@@ -26,7 +28,7 @@ public class LibreFmAuthenticator {
 
     public LibreFmSession authenticate() {
 
-        long timestamp = Instant.now().getEpochSecond();
+        long timestamp = Instant.now(clock).getEpochSecond();
 
         String token = buildAuthToken(
                 properties.password(),
