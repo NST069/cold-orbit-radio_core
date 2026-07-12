@@ -53,6 +53,7 @@ CRITICAL_CHANGES=$(diff <(grep -E 'server\.register|add_protocol|set\("server\.'
 #  fi
 #else
   # Жёсткий перезапуск
+  cp "$NEW_SCRIPT" "$CURRENT_SCRIPT"
   echo "Изменения требуют жёсткого перезапуска. Причины:"
   [ -n "$FORMAT_CHANGED" ] && echo "  - Изменён формат вывода"
   [ -n "$QUEUE_ID_CHANGED" ] && echo "  - Изменён ID очереди запросов"

@@ -21,8 +21,9 @@ public class WebhooksController {
 
     @PostMapping("/liquidsoap")
     public ResponseEntity<String> liquidsoapEvent(@Valid @RequestBody LiquidsoapRequest request) {
-        log.info("Liquidsoap Event: {}", request);
+        log.debug("Liquidsoap Event: {}", request);
         playbackEventService.handleLiquidsoapEvent(request);
         return ResponseEntity.ok().build();
     }
+
 }

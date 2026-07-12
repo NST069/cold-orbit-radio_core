@@ -38,8 +38,14 @@ public class PlaybackHistoryEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
+    @Column(name = "album")
+    private String album;
+
     @CreatedDate
     @Column(name = "played_at", nullable = false)
     private Instant playedAt;
+
+    @Column(name = "duration", nullable = false)
+    private int duration;
 
 }

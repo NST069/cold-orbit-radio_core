@@ -19,6 +19,8 @@ services:
       STORAGE_LOCAL_PATH: /app/music
       LIQUIDSOAP_HOST: liquidsoap 
       LIQUIDSOAP_PORT: 1234
+      LIBREFM_USERNAME: ${LIBREFM_USERNAME}
+      LIBREFM_PASSWORD: ${LIBREFM_PASSWORD}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s

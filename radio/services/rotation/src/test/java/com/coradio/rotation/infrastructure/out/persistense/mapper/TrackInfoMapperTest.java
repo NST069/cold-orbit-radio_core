@@ -22,8 +22,6 @@ class TrackInfoMapperTest {
     void shouldMapResultSetToTrackInfo() throws SQLException {
         UUID id = UUID.randomUUID();
 
-        //ResultSet rs = mock(ResultSet.class);
-
         when(rs.getObject("id", UUID.class)).thenReturn(id);
         when(rs.getString("artist")).thenReturn("Artist");
         when(rs.getString("title")).thenReturn("Title");

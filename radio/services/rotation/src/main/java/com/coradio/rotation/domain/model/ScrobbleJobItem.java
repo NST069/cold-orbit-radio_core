@@ -11,8 +11,10 @@ public record ScrobbleJobItem(
         ScrobblerProvider provider,
         JobStatus status,
         Instant scheduledAt,
+        Instant startedAt,
         Instant sentAt,
         int attempts,
         String error
 ) {
+
 }

@@ -1,7 +1,7 @@
 package com.coradio.rotation.infrastructure.out.storage.local;
 
 import com.coradio.rotation.application.dto.LocalFileInfo;
-import com.coradio.rotation.application.exception.StorageException;
+import com.coradio.rotation.infrastructure.exception.StorageException;
 import com.coradio.rotation.domain.port.out.storage.LocalStoragePort;
 import com.coradio.rotation.infrastructure.out.storage.config.StorageProperties;
 import lombok.RequiredArgsConstructor;

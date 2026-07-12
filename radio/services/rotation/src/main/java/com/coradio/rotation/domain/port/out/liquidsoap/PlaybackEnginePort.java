@@ -8,6 +8,8 @@ public interface PlaybackEnginePort {
 
     Optional<String> getCurrentTrack();
 
+    Optional<String> getCurrentTrackDuration();
+
     void enqueue(String localPath);
 
     boolean isAvailable();

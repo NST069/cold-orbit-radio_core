@@ -12,6 +12,7 @@ public class ScrobbleJobMapper {
                 entity.getProvider(),
                 entity.getStatus(),
                 entity.getScheduledAt(),
+                entity.getStartedAt(),
                 entity.getSentAt(),
                 entity.getAttempts(),
                 entity.getError()
@@ -25,9 +26,11 @@ public class ScrobbleJobMapper {
                 .provider(scrobbleJobItem.provider())
                 .status(scrobbleJobItem.status())
                 .scheduledAt(scrobbleJobItem.scheduledAt())
+                .startedAt(scrobbleJobItem.startedAt())
                 .sentAt(scrobbleJobItem.sentAt())
                 .attempts(scrobbleJobItem.attempts())
                 .error(scrobbleJobItem.error())
                 .build();
     }
+
 }

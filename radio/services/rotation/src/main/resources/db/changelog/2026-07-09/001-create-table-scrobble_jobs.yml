@@ -33,6 +33,9 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
+                  name: started_at
+                  type: timestamptz
+              - column:
                   name: sent_at
                   type: timestamptz
               - column:

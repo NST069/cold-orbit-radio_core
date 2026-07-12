@@ -2,6 +2,7 @@ package com.coradio.rotation.application.service;
 
 import com.coradio.rotation.application.dto.TrackInfo;
 import com.coradio.rotation.application.dto.request.LiquidsoapRequest;
+import com.coradio.rotation.application.exception.HistoryItemNotFoundException;
 import com.coradio.rotation.application.exception.QueueItemNotFoundException;
 import com.coradio.rotation.application.exception.TrackNotFoundException;
 import com.coradio.rotation.domain.enums.JobStatus;
@@ -11,6 +12,7 @@ import com.coradio.rotation.domain.model.PlaybackHistoryItem;
 import com.coradio.rotation.domain.model.ScrobbleJobItem;
 import com.coradio.rotation.domain.model.TrackQueueItem;
 import com.coradio.rotation.domain.port.in.PlaybackEventUseCase;
+import com.coradio.rotation.domain.port.out.liquidsoap.PlaybackEnginePort;
 import com.coradio.rotation.domain.port.out.persistence.PlaybackHistoryRepositoryPort;
 import com.coradio.rotation.domain.port.out.persistence.ScrobbleJobRepositoryPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackCatalogPort;
@@ -34,12 +36,16 @@ public class PlaybackEventService implements PlaybackEventUseCase {
 
     private final TrackCatalogPort trackCatalogPort;
 
+    private final PlaybackEnginePort playbackEngine;
+
+    private final NowPlayingService nowPlayingService;
+
     @Override
     public void handleLiquidsoapEvent(LiquidsoapRequest request) {
 
         LiquidsoapEvent event = LiquidsoapEvent.fromValue(request.event());
 
-        log.debug("Incoming Liquidsoap Event: {}", event.getValue());
+        log.info("Incoming Liquidsoap Event: {}", event.getValue());
 
         switch (event) {
             case LiquidsoapEvent.TRACK_START:
@@ -47,6 +53,9 @@ public class PlaybackEventService implements PlaybackEventUseCase {
                 break;
             case LiquidsoapEvent.TRACK_END:
                 handleTrackEndEvent(request);
+                break;
+            case LiquidsoapEvent.TRACK_SCROBBLE:
+                handleTrackScrobbleEvent(request);
                 break;
             default:
                 log.warn("Event not presented: {}", event);
@@ -66,10 +75,7 @@ public class PlaybackEventService implements PlaybackEventUseCase {
 
         PlaybackHistoryItem historyItem = createPlaybackHistory(queueItem);
 
-        Arrays.stream(ScrobblerProvider.values()).forEach(provider -> {
-            ScrobbleJobItem scrobbleJobItem = createScrobblerJobItem(provider, historyItem);
-            log.debug("Created scrobbler job({}), {}", provider, scrobbleJobItem.id());
-        });
+        nowPlayingService.update(historyItem);
     }
 
     private void handleTrackEndEvent(LiquidsoapRequest request) {
@@ -83,10 +89,34 @@ public class PlaybackEventService implements PlaybackEventUseCase {
         log.debug("Track played {}", queueItem.trackId());
     }
 
+    private void handleTrackScrobbleEvent(LiquidsoapRequest request) {
+        String artist = request.artist();
+        String title = request.title();
+
+        PlaybackHistoryItem historyItem = playbackHistoryRepository.findLatestByArtistAndTitle(artist, title)
+                .orElseThrow(() -> new HistoryItemNotFoundException(artist + " - " + title));
+
+        Arrays.stream(ScrobblerProvider.values()).forEach(provider -> {
+            ScrobbleJobItem scrobbleJobItem = createScrobblerJobItem(provider, historyItem);
+            log.debug("Created scrobbler job({}), {}", provider, scrobbleJobItem.id());
+        });
+    }
+
     private PlaybackHistoryItem createPlaybackHistory(TrackQueueItem queueItem) {
         TrackInfo track = trackCatalogPort.findById(queueItem.trackId())
                 .orElseThrow(() -> new TrackNotFoundException(queueItem.trackId().toString()));
-        PlaybackHistoryItem historyItem = new PlaybackHistoryItem(null, queueItem.trackId(), track.artist(), track.title(), Instant.now());
+        int duration = Math.round(Float.parseFloat(playbackEngine.getCurrentTrackDuration()
+                .orElse("0")
+        ));
+        PlaybackHistoryItem historyItem = new PlaybackHistoryItem(
+                null,
+                queueItem.trackId(),
+                track.artist(),
+                track.title(),
+                "",
+                Instant.now(),
+                duration
+        );
         return playbackHistoryRepository.save(historyItem);
     }
 
@@ -96,7 +126,8 @@ public class PlaybackEventService implements PlaybackEventUseCase {
                 historyItem,
                 provider,
                 JobStatus.CREATED,
-                Instant.now().plusSeconds(30),
+                Instant.now(),
+                null,
                 null,
                 0,
                 null

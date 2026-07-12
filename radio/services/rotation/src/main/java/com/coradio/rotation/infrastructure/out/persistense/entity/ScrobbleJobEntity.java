@@ -51,6 +51,9 @@ public class ScrobbleJobEntity {
     @Column(name = "scheduled_at", nullable = false)
     private Instant scheduledAt;
 
+    @Column(name = "started_at")
+    private Instant startedAt;
+
     @Column(name = "sent_at")
     private Instant sentAt;
 
@@ -59,4 +62,5 @@ public class ScrobbleJobEntity {
 
     @Column(name = "error")
     private String error;
+
 }

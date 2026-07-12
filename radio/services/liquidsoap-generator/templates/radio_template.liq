@@ -34,8 +34,9 @@ icecast_mount = "{{ICECAST_MOUNT}}"
 # Sources
 ##############################################################################
 
-queue_source =
-    request.queue(id="coldorbit")
+queue_source = request.queue(id="coldorbit")
+
+blank_source = blank(id="queue_empty", duration=blank_duration)
 
 ##############################################################################
 # Playback Pipeline
@@ -50,7 +51,7 @@ playback =
 radio_output =
     fallback([
         playback,
-        blank(duration=blank_duration)
+        blank_source
     ])
 
 ##############################################################################
@@ -86,46 +87,47 @@ def metadata_value(track_metadata, key) =
 end
 
 def current_uri() =
-  cur = queue_source.current()
-  log("cur : #{cur}")
-  log("uri : #{request.uri(null.get(cur))}")
-
   uri = null.case(
     queue_source.current(),
     fun() -> "",
     fun(r) -> request.uri(r)
   )
-  log("#{uri}")
-  # q = queue_source.queue()
-  # if list.length(q) == 0 then
-  #   ""
-  # else
-  #   request.uri(list.hd(q))
-  # end
+
   uri
 end
 
-def webhook_send(event_type, track_metadata, track_uri) =
+def build_track_payload(event_type, track_metadata, track_uri) = 
+  track_artist   = metadata_value(track_metadata, "artist")
+  track_title    = metadata_value(track_metadata, "title")
+  track_album    = metadata_value(track_metadata, "album")
+  track_duration = metadata_value(track_metadata, "duration")
+  track_genre    = metadata_value(track_metadata, "genre")
+
+  obj = json()
+
+  obj.add("event", event_type)
+  obj.add("timestamp", int_of_float(time()))
+  obj.add("artist", track_artist)
+  obj.add("title", track_title)
+  obj.add("album", track_album)
+  obj.add("duration", track_duration)
+  obj.add("genre", track_genre)
+  obj.add("uri", track_uri)
+
+  obj.stringify(compact=true)
+end
+
+def build_system_payload(event_type) = 
+  obj = json()
+
+  obj.add("event", event_type)
+  obj.add("timestamp", int_of_float(time()))
+
+  obj.stringify(compact=true)
+end
+
+def webhook_send(event_type, payload) =
   if webhook_url != "" then
-    track_artist   = metadata_value(track_metadata, "artist")
-    track_title    = metadata_value(track_metadata, "title")
-    track_album    = metadata_value(track_metadata, "album")
-    track_duration = metadata_value(track_metadata, "duration")
-    track_genre    = metadata_value(track_metadata, "genre")
-
-    obj = json()
-
-    obj.add("event", event_type)
-    obj.add("timestamp", int_of_float(time()))
-    obj.add("artist", track_artist)
-    obj.add("title", track_title)
-    obj.add("album", track_album)
-    obj.add("duration", track_duration)
-    obj.add("genre", track_genre)
-    obj.add("uri", track_uri)
-
-    payload = obj.stringify(compact=true)
-
     try
       response =
         http.post(
@@ -146,7 +148,8 @@ end
 
 def notify_track_start(track_metadata) =
   if current_track_metadata() != [] then
-    webhook_send("track_end", current_track_metadata(), current_track_uri())
+    payload = build_track_payload("track_end", current_track_metadata(), current_track_uri())
+    webhook_send("track_end", payload)
   end
 
   uri = current_uri()
@@ -154,10 +157,25 @@ def notify_track_start(track_metadata) =
   current_track_metadata := track_metadata
   current_track_uri := uri
 
-  webhook_send("track_start", track_metadata, uri)
+  payload = build_track_payload("track_start", track_metadata, uri)
+  webhook_send("track_start", payload)
+end
+
+def notify_track_scrobble(_, _) =
+  payload = build_track_payload("track_scrobble", current_track_metadata(), current_track_uri())
+  webhook_send("track_scrobble", payload)
+end
+
+def notify_queue_empty() =
+  payload = build_system_payload("queue_empty")
+  webhook_send("queue_empty", payload)
 end
 
 queue_source.on_track(synchronous=false, notify_track_start)
+
+queue_source.on_position(position=30., synchronous=false, notify_track_scrobble)
+
+blank_source.on_wake_up(synchronous=false, notify_queue_empty)
 
 ##############################################################################
 # Internal API

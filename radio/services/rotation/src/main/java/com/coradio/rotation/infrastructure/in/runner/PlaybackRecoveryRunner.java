@@ -1,6 +1,6 @@
 package com.coradio.rotation.infrastructure.in.runner;
 
-import com.coradio.rotation.application.service.PlaybackRecoveryService;
+import com.coradio.rotation.domain.port.in.PlaybackRecoveryUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PlaybackRecoveryRunner {
 
-    private final PlaybackRecoveryService recoveryService;
+    private final PlaybackRecoveryUseCase recoveryService;
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
