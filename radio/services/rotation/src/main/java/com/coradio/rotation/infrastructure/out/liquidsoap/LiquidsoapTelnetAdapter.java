@@ -29,6 +29,13 @@ public class LiquidsoapTelnetAdapter implements PlaybackEnginePort {
     }
 
     @Override
+    public Optional<String> getCurrentTrackDuration() {
+        return Optional.of(
+                client.execute("coldorbit.duration").trim()
+        ).filter(Predicate.not(String::isBlank));
+    }
+
+    @Override
     public void enqueue(String localPath) {
         client.execute("coldorbit.push " + normalizePath(localPath));
     }
@@ -46,4 +53,5 @@ public class LiquidsoapTelnetAdapter implements PlaybackEnginePort {
     private String normalizePath(String path) {
         return path.replace("\\", "/");
     }
+
 }

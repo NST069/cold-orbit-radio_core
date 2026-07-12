@@ -1,6 +1,6 @@
 package com.coradio.rotation.infrastructure.out.liquidsoap;
 
-import com.coradio.rotation.application.exception.PlaybackEngineException;
+import com.coradio.rotation.infrastructure.exception.PlaybackEngineException;
 import com.coradio.rotation.infrastructure.out.liquidsoap.config.LiquidsoapProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -11,7 +11,9 @@ public class PlaybackHistoryMapper {
                 playbackHistoryEntity.getTrackId(),
                 playbackHistoryEntity.getArtist(),
                 playbackHistoryEntity.getTitle(),
-                playbackHistoryEntity.getPlayedAt()
+                playbackHistoryEntity.getAlbum(),
+                playbackHistoryEntity.getPlayedAt(),
+                playbackHistoryEntity.getDuration()
         );
     }
 
@@ -21,7 +23,10 @@ public class PlaybackHistoryMapper {
                 .trackId(playbackHistoryItem.trackId())
                 .artist(playbackHistoryItem.artist())
                 .title(playbackHistoryItem.title())
+                .album(playbackHistoryItem.album())
                 .playedAt(playbackHistoryItem.playedAt())
+                .duration(playbackHistoryItem.duration())
                 .build();
     }
+
 }

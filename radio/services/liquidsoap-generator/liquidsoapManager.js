@@ -43,9 +43,16 @@ const generateLiquidSoapScript = async () => {
 
 const validateScript = async (scriptPath) => {
     return new Promise((resolve, reject) => {
-        const child = spawn('liquidsoap', ['--check', scriptPath], {
-            stdio: ['ignore', 'pipe', 'pipe']
-        })
+        const child = spawn("docker", [
+            "run",
+            "--rm",
+            "--volumes-from",
+            "cor-liquidsoap-generator",
+            process.env.LIQUIDSOAP_IMAGE,
+            "liquidsoap",
+            "--check",
+            scriptPath
+        ])
 
         let stdout = ''
         let stderr = ''
@@ -59,6 +66,7 @@ const validateScript = async (scriptPath) => {
         })
 
         child.on('close', (code) => {
+            console.log(stdout, stderr)
             if (code === 0) {
                 resolve({
                     valid: true,

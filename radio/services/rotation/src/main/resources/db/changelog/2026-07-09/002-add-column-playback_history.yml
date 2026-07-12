@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-column-playback_history
+      author: NiKryukov
+      changes:
+        - addColumn:
+            tableName: playback_history
+            columns:
+              - column:
+                  name: duration
+                  type: int
+                  defaultValue: "0"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: album
+                  type: varchar

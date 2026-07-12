@@ -21,7 +21,9 @@ class PlaybackHistoryMapperTest {
                 .trackId(trackId)
                 .artist("Artist")
                 .title("Title")
+                .album("Album")
                 .playedAt(playedAt)
+                .duration(0)
                 .build();
 
         PlaybackHistoryItem result = PlaybackHistoryMapper.toDomain(entity);
@@ -30,7 +32,9 @@ class PlaybackHistoryMapperTest {
         assertEquals(trackId, result.trackId());
         assertEquals("Artist", result.artist());
         assertEquals("Title", result.title());
+        assertEquals("Album", result.album());
         assertEquals(playedAt, result.playedAt());
+        assertEquals(0, result.duration());
     }
 
     @Test
@@ -44,7 +48,9 @@ class PlaybackHistoryMapperTest {
                 trackId,
                 "Artist",
                 "Title",
-                playedAt
+                "Album",
+                playedAt,
+                0
         );
 
         PlaybackHistoryEntity result = PlaybackHistoryMapper.toEntity(item);
@@ -53,6 +59,9 @@ class PlaybackHistoryMapperTest {
         assertEquals(trackId, result.getTrackId());
         assertEquals("Artist", result.getArtist());
         assertEquals("Title", result.getTitle());
+        assertEquals("Album", result.getAlbum());
         assertEquals(playedAt, result.getPlayedAt());
+        assertEquals(0, result.getDuration());
     }
+
 }

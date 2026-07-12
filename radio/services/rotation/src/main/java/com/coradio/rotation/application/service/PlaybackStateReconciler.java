@@ -1,14 +1,11 @@
 package com.coradio.rotation.application.service;
 
-import com.coradio.rotation.domain.enums.PlaybackStatus;
 import com.coradio.rotation.domain.model.TrackQueueItem;
 import com.coradio.rotation.domain.port.out.persistence.TrackQueueRepositoryPort;
-import com.coradio.rotation.infrastructure.out.persistense.adapter.TrackQueueAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;

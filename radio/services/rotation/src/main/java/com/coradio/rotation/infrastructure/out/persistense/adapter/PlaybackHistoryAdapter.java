@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -30,4 +31,11 @@ public class PlaybackHistoryAdapter implements PlaybackHistoryRepositoryPort {
         return playbackHistoryRepository.findAllByPlayedAtAfter(Instant.now().minus(hours, ChronoUnit.HOURS)).stream()
                 .map(PlaybackHistoryMapper::toDomain).toList();
     }
+
+    @Override
+    public Optional<PlaybackHistoryItem> findLatestByArtistAndTitle(String artist, String title) {
+        return playbackHistoryRepository.findTopByArtistAndTitleOrderByPlayedAtDesc(artist, title)
+                .map(PlaybackHistoryMapper::toDomain);
+    }
+
 }

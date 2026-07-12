@@ -8,6 +8,9 @@ public record PlaybackHistoryItem(
         UUID trackId,
         String artist,
         String title,
-        Instant playedAt
+        String album,
+        Instant playedAt,
+        int duration
 ) {
+
 }

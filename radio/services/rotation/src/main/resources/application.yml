@@ -48,6 +48,14 @@ liquidsoap:
   port: ${LIQUIDSOAP_PORT}
   timeout: 5000
 
+scrobbler:
+  librefm:
+    api-url: https://libre.fm
+    username: ${LIBREFM_USERNAME}
+    password: ${LIBREFM_PASSWORD}
+    supports-now-playing: true
+    enabled: true
+
 rotation:
   queue:
     min-size: 5
@@ -66,6 +74,7 @@ rotation:
     monitor-playback-cron: "*/5 * * * * *"
     gc-processed-cron: "0 */15 * * * *"
     gc-orphan-cron: "0 0 * * * *"
+    scrobble-cron: "*/5 * * * * *"
 
 logging:
   level:

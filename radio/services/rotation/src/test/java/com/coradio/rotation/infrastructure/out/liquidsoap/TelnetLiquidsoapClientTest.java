@@ -1,6 +1,6 @@
 package com.coradio.rotation.infrastructure.out.liquidsoap;
 
-import com.coradio.rotation.application.exception.PlaybackEngineException;
+import com.coradio.rotation.infrastructure.exception.PlaybackEngineException;
 import com.coradio.rotation.infrastructure.out.liquidsoap.config.LiquidsoapProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -209,4 +209,5 @@ class TelnetLiquidsoapClientTest {
 
         assertFalse(client.isAvailable());
     }
+
 }

@@ -55,7 +55,7 @@ class PlaybackHistoryAdapterIntegrationTest {
         UUID trackId = UUID.randomUUID();
         Instant playedAt = Instant.now();
 
-        PlaybackHistoryItem item = new PlaybackHistoryItem(null, trackId, "Artist", "Title", playedAt);
+        PlaybackHistoryItem item = new PlaybackHistoryItem(null, trackId, "Artist", "Title", "Album", playedAt, 0);
 
         PlaybackHistoryItem saved = adapter.save(item);
 
@@ -63,7 +63,9 @@ class PlaybackHistoryAdapterIntegrationTest {
         assertEquals(trackId, saved.trackId());
         assertEquals("Artist", saved.artist());
         assertEquals("Title", saved.title());
+        assertEquals("Album", saved.album());
         assertEquals(playedAt, saved.playedAt());
+        assertEquals(0, saved.duration());
 
         List<PlaybackHistoryEntity> entities = playbackHistoryRepository.findAll();
 
