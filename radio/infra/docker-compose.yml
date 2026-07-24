@@ -21,6 +21,7 @@ services:
       LIQUIDSOAP_PORT: 1234
       LIBREFM_USERNAME: ${LIBREFM_USERNAME}
       LIBREFM_PASSWORD: ${LIBREFM_PASSWORD}
+      ICECAST_MOINT_POINT: /radio.mp3
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
@@ -29,6 +30,8 @@ services:
       start_period: 40s
     volumes:
       - music-cache:/app/music
+    ports:
+      - "8081:8080"
     networks:
     - cornet
         

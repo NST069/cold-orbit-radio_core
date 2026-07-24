@@ -1,7 +1,7 @@
 package com.coradio.rotation.application.service;
 
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
-import com.coradio.rotation.domain.port.in.NowPlayingUseCase;
+import com.coradio.rotation.domain.port.in.ScrobbleNowPlayingUseCase;
 import com.coradio.rotation.domain.port.out.scrobbler.ScrobbleProviderPort;
 import com.coradio.rotation.domain.port.out.scrobbler.ScrobbleProviderRegistryPort;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class NowPlayingService implements NowPlayingUseCase {
+public class ScrobbleNowPlayingService implements ScrobbleNowPlayingUseCase {
 
     private final ScrobbleProviderRegistryPort registry;
 
@@ -32,4 +32,5 @@ public class NowPlayingService implements NowPlayingUseCase {
                 });
 
     }
+
 }

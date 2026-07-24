@@ -1,6 +1,9 @@
 server:
   port: ${ROTATION_PORT:8080}
 
+api:
+  prefix: /api/v1
+
 spring:
   application:
     name: rotation
@@ -48,6 +51,10 @@ liquidsoap:
   port: ${LIQUIDSOAP_PORT}
   timeout: 5000
 
+icecast:
+  url: ${ICECAST_URL}
+  mount-point: ${ICECAST_MOUNT_POINT}
+
 scrobbler:
   librefm:
     api-url: https://libre.fm
@@ -75,6 +82,7 @@ rotation:
     gc-processed-cron: "0 */15 * * * *"
     gc-orphan-cron: "0 0 * * * *"
     scrobble-cron: "*/5 * * * * *"
+    sync-icecast-cron: "*/5 * * * * *"
 
 logging:
   level:

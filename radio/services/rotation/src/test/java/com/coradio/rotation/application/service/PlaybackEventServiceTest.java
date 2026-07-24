@@ -45,7 +45,7 @@ class PlaybackEventServiceTest {
     private PlaybackEnginePort playbackEngine;
 
     @Mock
-    private NowPlayingService nowPlayingService;
+    private ScrobbleNowPlayingService scrobbleNowPlayingService;
 
     @InjectMocks
     private PlaybackEventService service;
@@ -104,7 +104,7 @@ class PlaybackEventServiceTest {
 
         verify(trackQueueRepository).markPlaying(queueId);
         verify(playbackHistoryRepository).save(any(PlaybackHistoryItem.class));
-        verify(nowPlayingService).update(history);
+        verify(scrobbleNowPlayingService).update(history);
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.coradio.rotation.application.dto.request.LiquidsoapRequest;
 import com.coradio.rotation.application.exception.HistoryItemNotFoundException;
 import com.coradio.rotation.application.exception.QueueItemNotFoundException;
 import com.coradio.rotation.application.exception.TrackNotFoundException;
+import com.coradio.rotation.domain.context.NowPlayingStateContext;
 import com.coradio.rotation.domain.enums.JobStatus;
 import com.coradio.rotation.domain.enums.LiquidsoapEvent;
 import com.coradio.rotation.domain.enums.ScrobblerProvider;
@@ -38,7 +39,9 @@ public class PlaybackEventService implements PlaybackEventUseCase {
 
     private final PlaybackEnginePort playbackEngine;
 
-    private final NowPlayingService nowPlayingService;
+    private final ScrobbleNowPlayingService scrobbleNowPlayingService;
+
+    private final NowPlayingStateContext nowPlayingStateContext;
 
     @Override
     public void handleLiquidsoapEvent(LiquidsoapRequest request) {
@@ -69,13 +72,19 @@ public class PlaybackEventService implements PlaybackEventUseCase {
         TrackQueueItem queueItem = trackQueueRepository.findByLocalPath(currentTrack)
                 .orElseThrow(() -> new QueueItemNotFoundException(currentTrack));
 
+        TrackInfo trackInfo = trackCatalogPort.findById(queueItem.trackId())
+                .orElseThrow(() -> new TrackNotFoundException(queueItem.trackId().toString()));
+
         trackQueueRepository.markPlaying(queueItem.id());
+
+        nowPlayingStateContext.setCurrentQueueItem(queueItem);
+        nowPlayingStateContext.setCurrentTrack(trackInfo);
 
         log.debug("Track playing {}", queueItem.trackId());
 
         PlaybackHistoryItem historyItem = createPlaybackHistory(queueItem);
 
-        nowPlayingService.update(historyItem);
+        scrobbleNowPlayingService.update(historyItem);
     }
 
     private void handleTrackEndEvent(LiquidsoapRequest request) {
