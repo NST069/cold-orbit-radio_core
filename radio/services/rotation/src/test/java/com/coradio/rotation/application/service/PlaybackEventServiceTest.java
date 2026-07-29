@@ -2,6 +2,7 @@ package com.coradio.rotation.application.service;
 
 import com.coradio.rotation.application.dto.TrackInfo;
 import com.coradio.rotation.application.dto.request.LiquidsoapRequest;
+import com.coradio.rotation.domain.context.NowPlayingStateContext;
 import com.coradio.rotation.domain.enums.PlaybackStatus;
 import com.coradio.rotation.domain.enums.ScrobblerProvider;
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
@@ -46,6 +47,9 @@ class PlaybackEventServiceTest {
 
     @Mock
     private ScrobbleNowPlayingService scrobbleNowPlayingService;
+
+    @Mock
+    private NowPlayingStateContext nowPlayingStateContext;
 
     @InjectMocks
     private PlaybackEventService service;
