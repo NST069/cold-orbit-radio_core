@@ -7,7 +7,7 @@ import com.coradio.rotation.infrastructure.exception.ScrobblerApiException;
 import com.coradio.rotation.infrastructure.exception.ScrobblerAuthenticationException;
 import com.coradio.rotation.infrastructure.exception.ScrobblerBadSessionException;
 import com.coradio.rotation.infrastructure.out.scrobble.librefm.dto.LibreFmSession;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -16,11 +16,15 @@ import org.springframework.web.client.RestClient;
 import java.net.URI;
 
 @Component
-@RequiredArgsConstructor
 public class LibreFmClient {
 
     private final RestClient restClient;
     private final LibreFmAuthenticator authenticator;
+
+    public LibreFmClient(@Qualifier("LibreFm") RestClient restClient, LibreFmAuthenticator authenticator) {
+        this.restClient = restClient;
+        this.authenticator = authenticator;
+    }
 
     public void updateNowPlaying(PlaybackHistoryItem historyItem) {
         LibreFmSession session = getOrAuthenticate();

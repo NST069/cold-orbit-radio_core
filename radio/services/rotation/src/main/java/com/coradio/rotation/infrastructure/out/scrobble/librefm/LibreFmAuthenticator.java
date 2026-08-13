@@ -3,8 +3,8 @@ package com.coradio.rotation.infrastructure.out.scrobble.librefm;
 import com.coradio.rotation.domain.enums.ScrobblerProvider;
 import com.coradio.rotation.infrastructure.exception.ScrobblerAuthenticationException;
 import com.coradio.rotation.infrastructure.out.scrobble.librefm.dto.LibreFmSession;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.client.RestClient;
@@ -14,7 +14,6 @@ import java.time.Instant;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class LibreFmAuthenticator {
 
     private static final String CLIENT_ID = "cor";
@@ -25,6 +24,14 @@ public class LibreFmAuthenticator {
     private final LibreFmSessionHolder sessionHolder;
     private final LibreFmProperties properties;
     private final LibreFmHandshakeParser parser;
+
+    public LibreFmAuthenticator(Clock clock, @Qualifier("LibreFm") RestClient restClient, LibreFmSessionHolder sessionHolder, LibreFmProperties properties, LibreFmHandshakeParser parser) {
+        this.clock = clock;
+        this.restClient = restClient;
+        this.sessionHolder = sessionHolder;
+        this.properties = properties;
+        this.parser = parser;
+    }
 
     public LibreFmSession authenticate() {
 

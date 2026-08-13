@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/api/webhooks")
+@RequestMapping("/webhooks")
 public class WebhooksController {
 
     private final PlaybackEventUseCase playbackEventService;

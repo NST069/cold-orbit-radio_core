@@ -12,7 +12,7 @@ import java.time.Duration;
 @EnableConfigurationProperties(LibreFmProperties.class)
 public class LibreFmConfig {
 
-    @Bean
+    @Bean("LibreFm")
     RestClient libreFmRestClient(LibreFmProperties properties) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))

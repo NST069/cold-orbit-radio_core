@@ -141,6 +141,21 @@ services:
       start_period: 40s
     networks:
       - cornet
+
+  nginx:
+    image: nginx:alpine
+    container_name: cor_nginx
+    restart: unless-stopped
+    mem_limit: 32m
+    cpus: 0.15
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.local.conf:/etc/nginx/nginx.conf:ro
+    environment:
+      TZ: Europe/Moscow
+    networks:
+      - cornet
       
 volumes:
   postgres-data:
