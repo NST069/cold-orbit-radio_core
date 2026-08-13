@@ -1,9 +1,0 @@
-{
-    "restartable": "rs",
-    "ignore": [
-        "liquidsoap/trackQueue.json",
-        "liquidsoap/posts.json",
-        "liquidsoap/liquidsoap.log"
-    ],
-    "verbose": false
-}

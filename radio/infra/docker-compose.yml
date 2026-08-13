@@ -1,0 +1,130 @@
+services:
+  rotation:
+    build:
+      context: ../services/rotation
+      dockerfile: Dockerfile
+    container_name: cor-rotation
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY}
+      STORAGE_BUCKET: ${STORAGE_BUCKET}
+      STORAGE_LOCAL_PATH: /app/music
+      LIQUIDSOAP_HOST: liquidsoap 
+      LIQUIDSOAP_PORT: 1234
+      LIBREFM_USERNAME: ${LIBREFM_USERNAME}
+      LIBREFM_PASSWORD: ${LIBREFM_PASSWORD}
+      ICECAST_MOUNT_POINT: /radio.mp3
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - music-cache:/app/music
+    networks:
+      - cornet
+        
+  liquidsoap:
+    image: savonet/liquidsoap:v2.4.2
+    container_name: cor-liquidsoap
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.4
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:4000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    volumes:
+      - music-cache:/app/music
+      - ./shared/liquidsoap:/app/liquidsoap
+    command: >
+      liquidsoap /app/liquidsoap/radio.liq
+    depends_on:
+      - icecast
+    networks:
+      - cornet
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  liquidsoap-generator:
+    build:
+      context: ../services/liquidsoap-generator
+      dockerfile: Dockerfile
+    container_name: cor-liquidsoap-generator
+    restart: no
+    mem_limit: 128m
+    cpus: 0.3
+    environment:
+      NODE_ENV: production
+      MAX_MEMORY: 128
+      ICECAST_HOST: icecast
+      ICECAST_PORT: 8000
+      ICECAST_MOUNT: radio.mp3
+      LIQUIDSOAP_SCRIPT_PATH: /app/liquidsoap/
+      LIQUIDSOAP_IMAGE: savonet/liquidsoap:v2.4.2
+      WEBHOOK_URL: ${WEBHOOK_URL}
+    command: >
+      sh -c "
+        mkdir -p /app/liquidsoap/logs &&
+        node server.js
+      "
+    volumes:
+      - ./shared/liquidsoap:/app/liquidsoap
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cornet
+  
+  icecast:
+    image: moul/icecast
+    container_name: cor-icecast
+    restart: unless-stopped
+    mem_limit: 64m
+    cpus: 0.2
+    env_file: .env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - cornet
+
+  nginx:
+    image: nginx:alpine
+    container_name: cor_nginx
+    restart: unless-stopped
+    mem_limit: 32m
+    cpus: 0.15
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    environment:
+      TZ: Europe/Moscow
+    networks:
+      - cornet
+      
+volumes:
+  music-cache:
+  
+networks:
+  cornet:
+    name: cornet
+    driver: bridge

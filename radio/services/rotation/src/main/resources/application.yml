@@ -1,0 +1,89 @@
+server:
+  port: ${ROTATION_PORT:8080}
+
+api:
+  prefix: /api/v1
+
+spring:
+  application:
+    name: rotation
+  profiles:
+    default: ${APP_PROFILE:default}
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 3000
+      maximum-pool-size: 10
+      idle-timeout: 600000
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
+      connection-test-query: SELECT 1
+      initialization-fail-timeout: 30000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yml
+    contexts: prod
+
+storage:
+  endpoint: ${STORAGE_ENDPOINT}
+  access-key: ${STORAGE_ACCESS_KEY}
+  secret-key: ${STORAGE_SECRET_KEY}
+  bucket: cold-orbit-radio
+  local-path: ${STORAGE_LOCAL_PATH:${java.io.tmpdir}}
+
+liquidsoap:
+  host: ${LIQUIDSOAP_HOST}
+  port: ${LIQUIDSOAP_PORT}
+  timeout: 5000
+
+icecast:
+  url: ${ICECAST_URL}
+  mount-point: ${ICECAST_MOUNT_POINT}
+
+scrobbler:
+  librefm:
+    api-url: https://libre.fm
+    username: ${LIBREFM_USERNAME}
+    password: ${LIBREFM_PASSWORD}
+    supports-now-playing: true
+    enabled: true
+
+rotation:
+  queue:
+    min-size: 5
+    target-size: 10
+    history-hours: 1
+  playback:
+    min-size: 2
+    target-size: 10
+  gc:
+    processed-retention: PT1H
+    orphan-retention: PT1H
+  jobs:
+    fill-queue-cron: "0 */5 * * * *"
+    prepare-tracks-cron: "*/30 * * * * *"
+    enqueue-tracks-cron: "*/15 * * * * *"
+    monitor-playback-cron: "*/5 * * * * *"
+    gc-processed-cron: "0 */15 * * * *"
+    gc-orphan-cron: "0 0 * * * *"
+    scrobble-cron: "*/5 * * * * *"
+    sync-icecast-cron: "*/5 * * * * *"
+
+logging:
+  level:
+    com.coradio.rotation: DEBUG

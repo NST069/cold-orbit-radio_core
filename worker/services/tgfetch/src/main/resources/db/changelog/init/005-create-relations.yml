@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-track_files-to-tracks-relation
+      author: NiKryukov
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: track_id
+            baseTableName: track_files
+            referencedColumnNames: id
+            referencedTableName: tracks
+            constraintName: fk_track_files_to_tracks_id
+
+  - changeSet:
+      id: create-telegram_posts-to-tracks-relation
+      author: NiKryukov
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: track_id
+            baseTableName: telegram_posts
+            referencedColumnNames: id
+            referencedTableName: tracks
+            constraintName: fk_telegram_posts_to_tracks_id
+
+  - changeSet:
+      id: create-analysis_jobs-to-track_files-relation
+      author: NiKryukov
+      changes:
+        - addForeignKeyConstraint:
+            baseColumnNames: track_file_id
+            baseTableName: analysis_jobs
+            referencedColumnNames: id
+            referencedTableName: track_files
+            constraintName: fk_analysis_jobs_to_track_files_id

@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-table-telegram_posts
+      author: NiKryukov
+      changes:
+        - createTable:
+            tableName: telegram_posts
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_post_id
+              - column:
+                  name: channel_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: message_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: track_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: raw_text
+                  type: text
+              - column:
+                  name: published_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fetched_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false

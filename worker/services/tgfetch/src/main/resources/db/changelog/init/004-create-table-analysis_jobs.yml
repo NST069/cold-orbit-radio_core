@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-table-analysis_jobs
+      author: NiKryukov
+      changes:
+        - createTable:
+            tableName: analysis_jobs
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_analysis_job_id
+              - column:
+                  name: track_file_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: timestamptz
+              - column:
+                  name: finished_at
+                  type: timestamptz
+              - column:
+                  name: error_message
+                  type: text
