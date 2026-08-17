@@ -22,7 +22,7 @@ async function routes(fastify) {
                     properties: {
                         limit: {
                             type: 'integer',
-                            default: 100
+                            default: 50
                         },
                         fromMessageId: {
                             type: 'integer'
@@ -53,10 +53,10 @@ async function routes(fastify) {
                 const { chatId } = request.params
 
                 const limit =
-                    Number(request.query.limit || 100)
+                    Number(request.query.limit || 50)
 
                 const cursor =
-                    Number(request.query.cursor || 0)
+                    Number(request.query.fromMessageId || 0)
 
                 return {
                     messages:

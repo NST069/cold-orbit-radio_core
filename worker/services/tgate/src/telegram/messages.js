@@ -12,8 +12,9 @@ async function getMessages(chatId, limit, cursor) {
         '@type': 'getChatHistory',
         chat_id: chatId,
         from_message_id: cursor || 0,
-        limit,
-        offset: 0
+        limit: limit,
+        offset: 0,
+        only_local: false
     })
 
     const items = history.messages.map(mapMessage)

@@ -42,6 +42,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation(kotlin("stdlib"))
 }
 
 kotlin {
@@ -58,4 +59,7 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+repositories {
+    mavenCentral()
 }

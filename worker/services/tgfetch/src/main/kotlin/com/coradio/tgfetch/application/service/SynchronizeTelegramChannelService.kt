@@ -28,7 +28,6 @@ class SynchronizeTelegramChannelService(
     private val log = logger {}
     private lateinit var summary: SynchronizationSummary
 
-    @Transactional
     override fun execute(channelId: Long, limit: Int): SynchronizationSummary {
         log.info { "Starting telegram synchronization" }
         val startedAt = Instant.now()
@@ -77,7 +76,8 @@ class SynchronizeTelegramChannelService(
         return summary
     }
 
-    private fun createNewTrack(telegramTrackData: TelegramTrackData): Track {
+    @Transactional
+    fun createNewTrack(telegramTrackData: TelegramTrackData): Track {
 
         val metadata = metadataResolver.resolve(telegramTrackData)
 
