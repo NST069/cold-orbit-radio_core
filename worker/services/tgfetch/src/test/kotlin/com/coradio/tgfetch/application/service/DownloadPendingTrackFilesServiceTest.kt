@@ -5,11 +5,13 @@ import com.coradio.tgfetch.domain.model.view.TrackFileJobView
 import com.coradio.tgfetch.domain.port.out.persistence.TrackFileRepositoryPort
 import com.coradio.tgfetch.domain.port.out.storage.AudioMetadataServicePort
 import com.coradio.tgfetch.domain.port.out.storage.StorageGatewayPort
+import com.coradio.tgfetch.domain.port.out.telegram.DownloadFileResponse
 import com.coradio.tgfetch.domain.port.out.telegram.TelegramGatewayPort
 import com.coradio.tgfetch.infrastructure.exception.AudioMetadataException
 import com.coradio.tgfetch.infrastructure.exception.StorageException
 import com.coradio.tgfetch.infrastructure.exception.TelegramException
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers.startsWith
@@ -53,6 +55,13 @@ class DownloadPendingTrackFilesServiceTest {
             fileName = "track.mp3",
             retryCount = 0,
         )
+
+    @BeforeEach
+    fun setUp(){
+        whenever(
+            trackFileRepository.findAllByStatus(TrackFileStatus.CREATED)
+        ).thenReturn(emptyList())
+    }
 
     @Test
     fun `should return empty summary when no pending files`() {
@@ -122,7 +131,7 @@ class DownloadPendingTrackFilesServiceTest {
 
         whenever(
             telegramGateway.downloadFile("telegram-file-id", "mp3")
-        ).thenReturn(tempFile)
+        ).thenReturn(DownloadFileResponse(tempFile, "1234"))
 
         whenever(storageGateway.exists(any()))
             .thenReturn(false)
@@ -163,7 +172,7 @@ class DownloadPendingTrackFilesServiceTest {
 
         whenever(
             telegramGateway.downloadFile(any(), any())
-        ).thenReturn(tempFile)
+        ).thenReturn(DownloadFileResponse(tempFile, "1234"))
 
         whenever(storageGateway.exists(any()))
             .thenReturn(true)
@@ -232,7 +241,7 @@ class DownloadPendingTrackFilesServiceTest {
 
         whenever(
             telegramGateway.downloadFile("telegram-file-id", "mp3")
-        ).thenReturn(tempFile)
+        ).thenReturn(DownloadFileResponse(tempFile, "1234"))
 
         whenever(
             storageGateway.exists(any())
@@ -275,7 +284,7 @@ class DownloadPendingTrackFilesServiceTest {
 
         whenever(
             telegramGateway.downloadFile("telegram-file-id", "mp3")
-        ).thenReturn(tempFile)
+        ).thenReturn(DownloadFileResponse(tempFile, "1234"))
 
         whenever(
             audioMetadataService.rewriteMetadata(any(), any(), any())

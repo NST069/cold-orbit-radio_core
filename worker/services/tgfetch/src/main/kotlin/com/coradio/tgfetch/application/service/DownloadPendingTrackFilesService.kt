@@ -35,7 +35,7 @@ class DownloadPendingTrackFilesService(
 
         summary = DownloadSummary()
 
-        markPending();
+        markPending()
 
         val pendingFiles = trackFileRepository.findAllByStatus(TrackFileStatus.PENDING)
 
@@ -47,7 +47,8 @@ class DownloadPendingTrackFilesService(
                             log.info { "Track ${trackFile.id} already picked by another worker" }
                             return@forEach
                         }
-                        val file = telegramGateway.downloadFile(trackFile.telegramFileId, resolveExtension(trackFile))
+                        val downloadResponse = telegramGateway.downloadFile(trackFile.telegramFileId, resolveExtension(trackFile))
+                        val file = downloadResponse.path
                         val storageKey = generateStorageKey(trackFile.id, file)
                         audioMetadataService.rewriteMetadata(file, trackFile.artist, trackFile.title)
                         if (storageGateway.exists(storageKey)) {
@@ -56,6 +57,7 @@ class DownloadPendingTrackFilesService(
                         storageGateway.upload(storageKey, file)
                         markReady(trackFile.id, storageKey)
                         Files.deleteIfExists(file)
+                        telegramGateway.removeFile(downloadResponse.fileId)
                         log.debug { "Downloaded ${trackFile.artist} by ${trackFile.title}" }
                         summary.success++
                     } catch (ex: InfrastructureException) {

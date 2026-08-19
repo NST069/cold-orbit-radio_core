@@ -2,7 +2,6 @@ package com.coradio.tgfetch.domain.port.out.telegram
 
 import com.coradio.tgfetch.infrastructure.out.telegram.dto.ChannelInfoResponse
 import com.coradio.tgfetch.infrastructure.out.telegram.dto.HealthResponse
-import java.nio.file.Path
 
 interface TelegramGatewayPort {
     fun getChannel(username: String): ChannelInfoResponse
@@ -16,7 +15,11 @@ interface TelegramGatewayPort {
     fun downloadFile(
         remoteFileId: String,
         extension: String?
-    ): Path
+    ): DownloadFileResponse
+
+    fun removeFile(
+        fileId: String
+    )
 
     fun health(): HealthResponse
 }
