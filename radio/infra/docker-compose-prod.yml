@@ -1,12 +1,11 @@
 services:
   rotation:
-    build:
-      context: ../services/rotation
-      dockerfile: Dockerfile
+    image: cor-rotation:2026.08.17-1
     container_name: cor-rotation
     restart: unless-stopped
     env_file: .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx192m"
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -61,9 +60,7 @@ services:
         max-file: "3"
 
   liquidsoap-generator:
-    build:
-      context: ../services/liquidsoap-generator
-      dockerfile: Dockerfile
+    image: cor-liquidsoap-generator:2026.08.17-1
     container_name: cor-liquidsoap-generator
     restart: no
     mem_limit: 128m
