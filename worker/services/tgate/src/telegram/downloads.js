@@ -2,6 +2,8 @@ const client = require('./client')
 
 const logger = require('../services/logger')
 
+const fs = require('fs/promises')
+
 async function downloadFile(
     remoteFileId
 ) {
@@ -90,49 +92,30 @@ async function waitForFile(fileId) {
     throw new Error("File download timeout")
 }
 
-async function removeFileByRemoteId(remoteFileId) {
-    logger.info("Removing file", remoteFileId)
-
-    const file = await client.invoke({
-        '@type': 'getRemoteFile',
-        remote_file_id: remoteFileId
-    })
-
-    if (!file.id) {
-        return
-    }
-
-    await client.invoke({
-        '@type': 'removeFileFromDownloads',
-        file_id: file.id,
-        delete_from_cache: true
-    })
-}
-
 async function removeFile(fileId) {
     logger.info({ fileId }, 'Removing file')
 
     const file = await client.invoke({
         '@type': 'getFile',
-        file_id: Number(fileId)
+        file_id: fileId
     })
+
+    const path = file.local?.path
+
+    if (!path) {
+        logger.info({ fileId }, 'File already gone')
+        return
+    }
+
+    await fs.rm(path, { force: true })
 
     logger.info({
-        fileId: file.id,
-        path: file.local?.path,
-        exists: !!file.local,
-        downloaded: file.local?.is_downloading_completed
-    }, 'File before removal')
-
-    await client.invoke({
-        '@type': 'removeFileFromDownloads',
-        file_id: Number(fileId),
-        delete_from_cache: true
-    })
+        fileId,
+        path
+    }, 'File removed')
 }
 
 module.exports = {
     downloadFile,
-    removeFileByRemoteId,
     removeFile
 }

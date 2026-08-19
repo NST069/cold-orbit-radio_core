@@ -52,38 +52,6 @@ async function routes(fastify, opts) {
     )
 
     fastify.delete(
-        '/files/by-remote/:remoteFileId',
-        {
-            schema: {
-                tags: ['Files'],
-                summary: 'Delete file from local cache by remote file id',
-                params: {
-                    type: 'object',
-                    required: ['remoteFileId'],
-                    properties: {
-                        fileId: {
-                            type: 'string'
-                        }
-                    }
-                },
-                response: {
-                    204: {
-                        description: "File deleted or already gone"
-                    }
-                }
-            }
-        },
-        async (request, reply) => {
-
-            await downloads.removeFileByRemoteId(
-                request.params.remoteFileId
-            )
-
-            return reply.code(204).send()
-        }
-    )
-
-    fastify.delete(
         '/files/:fileId',
         {
             schema: {
