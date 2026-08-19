@@ -144,7 +144,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: cor_nginx
+    container_name: cor-nginx
     restart: unless-stopped
     mem_limit: 32m
     cpus: 0.15
