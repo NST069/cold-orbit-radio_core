@@ -26,6 +26,7 @@ services:
       - tgate
     env_file: .env
     environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx192m"
       TGATE_BASE_URL: http://tgate:3000
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}

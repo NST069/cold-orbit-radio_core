@@ -8,6 +8,7 @@ import com.coradio.tgfetch.infrastructure.out.telegram.dto.MessagesResponse
 import com.coradio.tgfetch.infrastructure.out.telegram.port.TempFileStorage
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -16,9 +17,12 @@ import org.mockito.Mockito.mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.client.RestClient
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.nio.file.Files
 import kotlin.test.Test
@@ -170,10 +174,15 @@ class TelegramGatewayAdapterTest {
 
         whenever(headers.retrieve()).thenReturn(response)
 
-        whenever(response.body(InputStream::class.java))
+        val responseHeaders = HttpHeaders()
+        responseHeaders.add("X-Telegram-File-Id", "1234")
+
+        whenever(response.toEntity(InputStream::class.java))
             .thenReturn(
-                ByteArrayInputStream(
-                    "hello".toByteArray()
+                ResponseEntity<InputStream>(
+                    "hello".toByteArray().inputStream(),
+                    responseHeaders,
+                    HttpStatus.OK
                 )
             )
 
@@ -182,8 +191,8 @@ class TelegramGatewayAdapterTest {
             "mp3"
         )
 
-        assertTrue(Files.exists(result))
-        assertTrue(Files.size(result) > 0)
+        assertTrue(Files.exists(result.path))
+        assertTrue(Files.size(result.path) > 0)
     }
 
     @Test
@@ -246,6 +255,69 @@ class TelegramGatewayAdapterTest {
         }
 
         assertFalse(Files.exists(file))
+    }
+
+    @Test
+    fun `deleteFile should remove file from TGate`() {
+        val fileId = "1234"
+
+        val request = mock<RestClient.RequestHeadersUriSpec<*>>()
+        val headers = mock<RestClient.RequestHeadersSpec<*>>()
+        val response = mock<RestClient.ResponseSpec>()
+
+        whenever(restClient.delete()).thenReturn(request)
+
+        whenever(
+            request.uri(
+                "/files/{fileId}",
+                fileId
+            )
+        ).thenReturn(headers)
+
+        whenever(headers.retrieve()).thenReturn(response)
+
+        whenever(response.toBodilessEntity())
+            .thenReturn(ResponseEntity.noContent().build())
+
+        adapter.removeFile(fileId)
+
+        verify(restClient).delete()
+
+        verify(request).uri(
+            "/files/{fileId}",
+            fileId
+        )
+
+        verify(headers).retrieve()
+
+        verify(response).toBodilessEntity()
+    }
+
+    @Test
+    fun `deleteFile should not throw when TGate fails`() {
+        val fileId = "1234"
+
+        val request = mock<RestClient.RequestHeadersUriSpec<*>>()
+        val headers = mock<RestClient.RequestHeadersSpec<*>>()
+        val response = mock<RestClient.ResponseSpec>()
+
+        whenever(restClient.delete()).thenReturn(request)
+
+        whenever(
+            request.uri(
+                "/files/{fileId}",
+                fileId
+            )
+        ).thenReturn(headers)
+
+        whenever(headers.retrieve()).thenReturn(response)
+
+        whenever(response.toBodilessEntity())
+            .thenThrow(RuntimeException("TGate unavailable"))
+
+        assertDoesNotThrow {
+            adapter.removeFile(fileId)
+        }
     }
 
     @Test

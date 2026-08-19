@@ -2,6 +2,8 @@ const client = require('./client')
 
 const logger = require('../services/logger')
 
+const fs = require('fs/promises')
+
 async function downloadFile(
     remoteFileId
 ) {
@@ -77,7 +79,7 @@ async function waitForFile(fileId) {
             '@type': 'getFile',
             file_id: fileId
         })
-        
+
         if (file.local?.is_downloading_completed) {
             return file
         }
@@ -90,6 +92,30 @@ async function waitForFile(fileId) {
     throw new Error("File download timeout")
 }
 
+async function removeFile(fileId) {
+    logger.info({ fileId }, 'Removing file')
+
+    const file = await client.invoke({
+        '@type': 'getFile',
+        file_id: fileId
+    })
+
+    const path = file.local?.path
+
+    if (!path) {
+        logger.info({ fileId }, 'File already gone')
+        return
+    }
+
+    await fs.rm(path, { force: true })
+
+    logger.info({
+        fileId,
+        path
+    }, 'File removed')
+}
+
 module.exports = {
-    downloadFile
+    downloadFile,
+    removeFile
 }
