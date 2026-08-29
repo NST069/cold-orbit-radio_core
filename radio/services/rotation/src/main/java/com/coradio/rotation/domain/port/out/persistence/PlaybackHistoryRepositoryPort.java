@@ -11,4 +11,6 @@ public interface PlaybackHistoryRepositoryPort {
 
     Optional<PlaybackHistoryItem> findLatestByArtistAndTitle(String artist, String title);
 
+    List<PlaybackHistoryItem> findLast10PlayedTracks();
+
 }

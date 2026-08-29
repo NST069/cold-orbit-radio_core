@@ -15,4 +15,6 @@ public interface PlaybackHistoryRepository extends JpaRepository<PlaybackHistory
 
     Optional<PlaybackHistoryEntity> findTopByArtistAndTitleOrderByPlayedAtDesc(String artist, String title);
 
+    List<PlaybackHistoryEntity> findTop10ByOrderByPlayedAtDesc();
+
 }
