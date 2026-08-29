@@ -4,36 +4,33 @@ import com.coradio.rotation.domain.enums.JobStatus;
 import com.coradio.rotation.domain.enums.ScrobblerProvider;
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
 import com.coradio.rotation.domain.model.ScrobbleJobItem;
+import com.coradio.rotation.infrastructure.exception.ScrobblerBadSessionException;
 import com.coradio.rotation.infrastructure.out.scrobble.librefm.dto.LibreFmSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.client.ExpectedCount;
-import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.web.client.RestClient;
 import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 @ExtendWith(MockitoExtension.class)
 class LibreFmClientTest {
 
-    private MockRestServiceServer server;
-
     @Mock
     private LibreFmAuthenticator authenticator;
+
+    @Mock
+    private LibreFmApiClient apiClient;
 
     private LibreFmClient client;
 
@@ -41,13 +38,7 @@ class LibreFmClientTest {
 
     @BeforeEach
     void setUp() {
-        RestClient.Builder builder = RestClient.builder();
-
-        server = MockRestServiceServer.bindTo(builder).build();
-
-        RestClient restClient = builder.build();
-
-        client = new LibreFmClient(restClient, authenticator);
+        client = new LibreFmClient(authenticator, apiClient);
 
         session = new LibreFmSession(
                 "session",
@@ -62,17 +53,15 @@ class LibreFmClientTest {
 
         when(authenticator.currentSession()).thenReturn(session);
 
-        server.expect(ExpectedCount.once(),
-                        requestTo(session.nowPlayingUrl()))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("OK", MediaType.TEXT_PLAIN));
-
         client.updateNowPlaying(historyItem);
+
+        verify(apiClient).execute(
+                eq(session.nowPlayingUrl()),
+                any()
+        );
 
         verify(authenticator, never()).authenticate();
         verify(authenticator, never()).invalidate();
-
-        server.verify();
     }
 
     @Test
@@ -82,16 +71,14 @@ class LibreFmClientTest {
         when(authenticator.currentSession()).thenReturn(null);
         when(authenticator.authenticate()).thenReturn(session);
 
-        server.expect(ExpectedCount.once(),
-                        requestTo(session.nowPlayingUrl()))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("OK", MediaType.TEXT_PLAIN));
-
         client.updateNowPlaying(historyItem);
 
         verify(authenticator).authenticate();
 
-        server.verify();
+        verify(apiClient).execute(
+                eq(session.nowPlayingUrl()),
+                any()
+        );
     }
 
     @Test
@@ -107,22 +94,17 @@ class LibreFmClientTest {
         when(authenticator.currentSession()).thenReturn(session);
         when(authenticator.authenticate()).thenReturn(newSession);
 
-        server.expect(ExpectedCount.once(),
-                        requestTo(session.nowPlayingUrl()))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("BADSESSION", MediaType.TEXT_PLAIN));
-
-        server.expect(ExpectedCount.once(),
-                        requestTo(newSession.nowPlayingUrl()))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("OK", MediaType.TEXT_PLAIN));
+        doThrow(new ScrobblerBadSessionException("Session expired"))
+                .doNothing()
+                .when(apiClient)
+                .execute(any(), any());
 
         client.updateNowPlaying(historyItem);
 
-        verify(authenticator, times(1)).invalidate();
-        verify(authenticator, times(1)).authenticate();
+        verify(authenticator).invalidate();
+        verify(authenticator).authenticate();
 
-        server.verify();
+        verify(apiClient, times(2)).execute(eq(session.nowPlayingUrl()), any());
     }
 
     @Test
@@ -131,17 +113,15 @@ class LibreFmClientTest {
 
         when(authenticator.currentSession()).thenReturn(session);
 
-        server.expect(ExpectedCount.once(),
-                        requestTo(session.submissionUrl()))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("OK", MediaType.TEXT_PLAIN));
-
         client.scrobble(jobItem);
+
+        verify(apiClient).execute(
+                eq(session.submissionUrl()),
+                any()
+        );
 
         verify(authenticator, never()).authenticate();
         verify(authenticator, never()).invalidate();
-
-        server.verify();
     }
 
     @Test
@@ -151,16 +131,14 @@ class LibreFmClientTest {
         when(authenticator.currentSession()).thenReturn(null);
         when(authenticator.authenticate()).thenReturn(session);
 
-        server.expect(ExpectedCount.once(),
-                        requestTo(session.submissionUrl()))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("OK", MediaType.TEXT_PLAIN));
-
         client.scrobble(jobItem);
 
         verify(authenticator).authenticate();
 
-        server.verify();
+        verify(apiClient).execute(
+                eq(session.submissionUrl()),
+                any()
+        );
     }
 
     @Test
@@ -176,22 +154,17 @@ class LibreFmClientTest {
         when(authenticator.currentSession()).thenReturn(session);
         when(authenticator.authenticate()).thenReturn(newSession);
 
-        server.expect(ExpectedCount.once(),
-                        requestTo(session.submissionUrl()))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("BADSESSION", MediaType.TEXT_PLAIN));
-
-        server.expect(ExpectedCount.once(),
-                        requestTo(newSession.submissionUrl()))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withSuccess("OK", MediaType.TEXT_PLAIN));
+        doThrow(new ScrobblerBadSessionException("Session expired"))
+                .doNothing()
+                .when(apiClient)
+                .execute(any(), any());
 
         client.scrobble(jobItem);
 
-        verify(authenticator, times(1)).invalidate();
-        verify(authenticator, times(1)).authenticate();
+        verify(authenticator).invalidate();
+        verify(authenticator).authenticate();
 
-        server.verify();
+        verify(apiClient, times(2)).execute(eq(session.submissionUrl()), any());
     }
 
     private ScrobbleJobItem scrobbleItem() {
