@@ -56,6 +56,13 @@ icecast:
   mount-point: ${ICECAST_MOUNT_POINT}
 
 scrobbler:
+  lastfm:
+    api-url: https://ws.audioscrobbler.com/2.0/
+    api-key: ${LASTFM_API_KEY}
+    api-secret: ${LASTFM_API_SECRET}
+    session-key: ${LASTFM_SESSION_KEY}
+    supports-now-playing: true
+    enabled: true
   librefm:
     api-url: https://libre.fm
     username: ${LIBREFM_USERNAME}
