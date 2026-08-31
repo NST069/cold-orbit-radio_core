@@ -38,4 +38,10 @@ public class PlaybackHistoryAdapter implements PlaybackHistoryRepositoryPort {
                 .map(PlaybackHistoryMapper::toDomain);
     }
 
+    @Override
+    public List<PlaybackHistoryItem> findLast10PlayedTracks() {
+        return playbackHistoryRepository.findTop10ByOrderByPlayedAtDesc().stream()
+                .map(PlaybackHistoryMapper::toDomain).toList();
+    }
+
 }
