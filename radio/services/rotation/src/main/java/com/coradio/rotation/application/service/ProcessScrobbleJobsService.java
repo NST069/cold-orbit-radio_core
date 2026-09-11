@@ -15,6 +15,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Deprecated
 public class ProcessScrobbleJobsService implements ProcessScrobbleJobsUseCase {
 
     private final ScrobbleProviderRegistryPort providerRegistry;

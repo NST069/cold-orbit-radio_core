@@ -5,6 +5,7 @@ import com.coradio.rotation.domain.port.out.persistence.TrackCatalogPort;
 import com.coradio.rotation.infrastructure.out.persistense.mapper.TrackInfoMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
@@ -19,12 +20,17 @@ public class TrackCatalogAdapter implements TrackCatalogPort {
     private final TrackInfoMapper mapper;
 
     @Override
+    @Cacheable(
+            cacheNames = "tracks",
+            key = "#trackId"
+    )
     public Optional<TrackInfo> findById(UUID trackId) {
         return jdbcClient.sql("""
                 SELECT
                     t.id,
                     t.artist,
                     t.title,
+                    "" as album, --t.album,
                     t.duration,
                     tf.storage_key
                 FROM tracks t
@@ -37,12 +43,17 @@ public class TrackCatalogAdapter implements TrackCatalogPort {
     }
 
     @Override
+    @Cacheable(
+            cacheNames = "playableTracks",
+            key = "'all'"
+    )
     public List<TrackInfo> findPlayableTracks() {
         return jdbcClient.sql("""
                 SELECT
                     t.id,
                     t.artist,
                     t.title,
+                    "" as album, --t.album,
                     t.duration,
                     tf.storage_key
                 FROM tracks t

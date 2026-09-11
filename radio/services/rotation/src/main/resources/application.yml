@@ -55,6 +55,13 @@ icecast:
   url: ${ICECAST_URL}
   mount-point: ${ICECAST_MOUNT_POINT}
 
+redis:
+  host: ${REDIS_HOST}
+  port: ${REDIS_PORT}
+  password: ${REDIS_PASSWORD}
+  timeout: 2s
+  ttl: 1h
+
 scrobbler:
   lastfm:
     api-url: https://ws.audioscrobbler.com/2.0/
@@ -62,13 +69,13 @@ scrobbler:
     api-secret: ${LASTFM_API_SECRET}
     session-key: ${LASTFM_SESSION_KEY}
     supports-now-playing: true
-    enabled: true
+    enabled: false
   librefm:
     api-url: https://libre.fm
     username: ${LIBREFM_USERNAME}
     password: ${LIBREFM_PASSWORD}
     supports-now-playing: true
-    enabled: true
+    enabled: false
 
 rotation:
   queue:

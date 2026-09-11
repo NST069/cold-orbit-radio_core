@@ -1,6 +1,6 @@
 services:
   rotation:
-    image: cor-rotation:2026.08.17-1
+    image: cor-rotation:1.0.1
     container_name: cor-rotation
     restart: unless-stopped
     env_file: .env

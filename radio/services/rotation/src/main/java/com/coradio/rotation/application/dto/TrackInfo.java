@@ -6,6 +6,7 @@ public record TrackInfo(
         UUID id,
         String artist,
         String title,
+        String album,
         int duration,
         String storageKey
 ) {

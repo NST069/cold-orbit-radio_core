@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@Deprecated
 public class ScrobbleJob {
 
     private final ProcessScrobbleJobsUseCase processScrobbleJobsUseCase;

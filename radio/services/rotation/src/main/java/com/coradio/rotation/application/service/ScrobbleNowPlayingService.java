@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Deprecated
 public class ScrobbleNowPlayingService implements ScrobbleNowPlayingUseCase {
 
     private final ScrobbleProviderRegistryPort registry;

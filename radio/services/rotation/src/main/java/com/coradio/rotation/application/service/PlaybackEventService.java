@@ -6,23 +6,19 @@ import com.coradio.rotation.application.exception.HistoryItemNotFoundException;
 import com.coradio.rotation.application.exception.QueueItemNotFoundException;
 import com.coradio.rotation.application.exception.TrackNotFoundException;
 import com.coradio.rotation.domain.context.NowPlayingStateContext;
-import com.coradio.rotation.domain.enums.JobStatus;
 import com.coradio.rotation.domain.enums.LiquidsoapEvent;
-import com.coradio.rotation.domain.enums.ScrobblerProvider;
+import com.coradio.rotation.domain.enums.NotificationEvent;
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
-import com.coradio.rotation.domain.model.ScrobbleJobItem;
 import com.coradio.rotation.domain.model.TrackQueueItem;
 import com.coradio.rotation.domain.port.in.PlaybackEventUseCase;
 import com.coradio.rotation.domain.port.out.liquidsoap.PlaybackEnginePort;
 import com.coradio.rotation.domain.port.out.persistence.PlaybackHistoryRepositoryPort;
-import com.coradio.rotation.domain.port.out.persistence.ScrobbleJobRepositoryPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackCatalogPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackQueueRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
-import java.util.Arrays;
 
 @Service
 @Slf4j
@@ -31,15 +27,13 @@ public class PlaybackEventService implements PlaybackEventUseCase {
 
     private final PlaybackHistoryRepositoryPort playbackHistoryRepository;
 
-    private final ScrobbleJobRepositoryPort scrobblerJobRepository;
-
     private final TrackQueueRepositoryPort trackQueueRepository;
 
     private final TrackCatalogPort trackCatalogPort;
 
     private final PlaybackEnginePort playbackEngine;
 
-    private final ScrobbleNowPlayingService scrobbleNowPlayingService;
+    private final ScrobbleService scrobbleService;
 
     private final NowPlayingStateContext nowPlayingStateContext;
 
@@ -84,7 +78,13 @@ public class PlaybackEventService implements PlaybackEventUseCase {
 
         PlaybackHistoryItem historyItem = createPlaybackHistory(queueItem);
 
-        scrobbleNowPlayingService.update(historyItem);
+        scrobbleService.publish(NotificationEvent.NOW_PLAYING,
+                trackInfo.id(),
+                trackInfo.artist(),
+                trackInfo.title(),
+                trackInfo.album(),
+                trackInfo.duration(),
+                historyItem.playedAt());
     }
 
     private void handleTrackEndEvent(LiquidsoapRequest request) {
@@ -101,14 +101,20 @@ public class PlaybackEventService implements PlaybackEventUseCase {
     private void handleTrackScrobbleEvent(LiquidsoapRequest request) {
         String artist = request.artist();
         String title = request.title();
+        String album = request.album();
+        String duration = request.duration();
 
         PlaybackHistoryItem historyItem = playbackHistoryRepository.findLatestByArtistAndTitle(artist, title)
                 .orElseThrow(() -> new HistoryItemNotFoundException(artist + " - " + title));
 
-        Arrays.stream(ScrobblerProvider.values()).forEach(provider -> {
-            ScrobbleJobItem scrobbleJobItem = createScrobblerJobItem(provider, historyItem);
-            log.debug("Created scrobbler job({}), {}", provider, scrobbleJobItem.id());
-        });
+        log.debug("Publishing scrobbler event for {}", historyItem.trackId());
+        scrobbleService.publish(NotificationEvent.SCROBBLE,
+                historyItem.trackId(),
+                artist,
+                title,
+                album,
+                Long.getLong(duration),
+                historyItem.playedAt());
     }
 
     private PlaybackHistoryItem createPlaybackHistory(TrackQueueItem queueItem) {
@@ -127,21 +133,6 @@ public class PlaybackEventService implements PlaybackEventUseCase {
                 duration
         );
         return playbackHistoryRepository.save(historyItem);
-    }
-
-    private ScrobbleJobItem createScrobblerJobItem(ScrobblerProvider provider, PlaybackHistoryItem historyItem) {
-        ScrobbleJobItem jobItem = new ScrobbleJobItem(
-                null,
-                historyItem,
-                provider,
-                JobStatus.CREATED,
-                Instant.now(),
-                null,
-                null,
-                0,
-                null
-        );
-        return scrobblerJobRepository.save(jobItem);
     }
 
 }

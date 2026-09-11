@@ -4,6 +4,7 @@ import com.coradio.rotation.domain.enums.ScrobblerProvider;
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
 import com.coradio.rotation.domain.model.ScrobbleJobItem;
 
+@Deprecated
 public interface ScrobbleProviderPort {
 
     ScrobblerProvider provider();
