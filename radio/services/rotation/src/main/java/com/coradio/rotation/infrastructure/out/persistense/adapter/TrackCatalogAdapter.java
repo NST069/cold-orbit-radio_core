@@ -30,7 +30,7 @@ public class TrackCatalogAdapter implements TrackCatalogPort {
                     t.id,
                     t.artist,
                     t.title,
-                    "" as album, --t.album,
+                    '' as album, --t.album,
                     t.duration,
                     tf.storage_key
                 FROM tracks t
@@ -53,7 +53,7 @@ public class TrackCatalogAdapter implements TrackCatalogPort {
                     t.id,
                     t.artist,
                     t.title,
-                    "" as album, --t.album,
+                    '' as album, --t.album,
                     t.duration,
                     tf.storage_key
                 FROM tracks t

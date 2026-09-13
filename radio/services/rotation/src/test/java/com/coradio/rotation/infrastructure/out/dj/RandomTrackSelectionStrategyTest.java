@@ -24,9 +24,9 @@ class RandomTrackSelectionStrategyTest {
     @BeforeEach
     void setUp() {
         candidates = List.of(
-                new TrackInfo(UUID.randomUUID(), "Artist 1", "Title 1", 180, "track1.mp3"),
-                new TrackInfo(UUID.randomUUID(), "Artist 2", "Title 2", 180, "track2.mp3"),
-                new TrackInfo(UUID.randomUUID(), "Artist 3", "Title 3", 180, "track3.mp3")
+                new TrackInfo(UUID.randomUUID(), "Artist 1", "Title 1", "", 180, "track1.mp3"),
+                new TrackInfo(UUID.randomUUID(), "Artist 2", "Title 2", "", 180, "track2.mp3"),
+                new TrackInfo(UUID.randomUUID(), "Artist 3", "Title 3", "", 180, "track3.mp3")
         );
     }
 

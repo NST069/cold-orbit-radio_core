@@ -58,7 +58,7 @@ class PrepareTracksServiceTest {
         UUID trackId = UUID.randomUUID();
         UUID queueId = UUID.randomUUID();
         TrackQueueItem queueItem = new TrackQueueItem(queueId, trackId, PlaybackStatus.CREATED, null, Instant.now(), null);
-        TrackInfo trackInfo = new TrackInfo(trackId, "Artist", "Title", 180, "storage-key");
+        TrackInfo trackInfo = new TrackInfo(trackId, "Artist", "Title", "", 180, "storage-key");
 
         when(trackQueueRepository.findAllByStatus(PlaybackStatus.CREATED)).thenReturn(List.of(queueItem));
         when(trackCatalogPort.findById(trackId)).thenReturn(Optional.of(trackInfo));
@@ -94,7 +94,7 @@ class PrepareTracksServiceTest {
         UUID trackId = UUID.randomUUID();
         UUID queueId = UUID.randomUUID();
         TrackQueueItem queueItem = new TrackQueueItem(queueId, trackId, PlaybackStatus.CREATED, null, Instant.now(), null);
-        TrackInfo trackInfo = new TrackInfo(trackId, "Artist", "Title", 180, "storage-key");
+        TrackInfo trackInfo = new TrackInfo(trackId, "Artist", "Title", "", 180, "storage-key");
 
         when(trackQueueRepository.findAllByStatus(PlaybackStatus.CREATED)).thenReturn(List.of(queueItem));
         when(trackCatalogPort.findById(trackId)).thenReturn(Optional.of(trackInfo));
@@ -115,8 +115,8 @@ class PrepareTracksServiceTest {
         UUID queueId2 = UUID.randomUUID();
         TrackQueueItem first = new TrackQueueItem(queueId1, trackId1, PlaybackStatus.CREATED, null, Instant.now(), null);
         TrackQueueItem second = new TrackQueueItem(queueId2, trackId2, PlaybackStatus.CREATED, null, Instant.now(), null);
-        TrackInfo track1 = new TrackInfo(trackId1, "Artist 1", "Title 1", 180, "storage-key-1");
-        TrackInfo track2 = new TrackInfo(trackId2, "Artist 2", "Title 2", 200, "storage-key-2");
+        TrackInfo track1 = new TrackInfo(trackId1, "Artist 1", "Title 1", "", 180, "storage-key-1");
+        TrackInfo track2 = new TrackInfo(trackId2, "Artist 2", "Title 2", "", 200, "storage-key-2");
 
         when(trackQueueRepository.findAllByStatus(PlaybackStatus.CREATED)).thenReturn(List.of(first, second));
         when(trackCatalogPort.findById(trackId1)).thenReturn(Optional.of(track1));

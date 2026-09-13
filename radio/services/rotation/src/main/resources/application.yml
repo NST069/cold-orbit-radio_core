@@ -24,6 +24,13 @@ spring:
       leak-detection-threshold: 60000
       connection-test-query: SELECT 1
       initialization-fail-timeout: 30000
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      timeout: 2s
+      ttl: 1h
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -54,13 +61,6 @@ liquidsoap:
 icecast:
   url: ${ICECAST_URL}
   mount-point: ${ICECAST_MOUNT_POINT}
-
-redis:
-  host: ${REDIS_HOST}
-  port: ${REDIS_PORT}
-  password: ${REDIS_PASSWORD}
-  timeout: 2s
-  ttl: 1h
 
 scrobbler:
   lastfm:

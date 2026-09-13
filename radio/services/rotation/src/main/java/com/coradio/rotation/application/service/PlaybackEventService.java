@@ -113,7 +113,7 @@ public class PlaybackEventService implements PlaybackEventUseCase {
                 artist,
                 title,
                 album,
-                Long.getLong(duration),
+                Long.parseLong(duration),
                 historyItem.playedAt());
     }
 

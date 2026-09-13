@@ -64,8 +64,8 @@ class FillQueueServiceTest {
 
     @Test
     void fillQueue_tracksRequired_shouldFillQueue() {
-        TrackInfo track1 = new TrackInfo(UUID.randomUUID(), "Artist 1", "Title 1", 180, "track1.mp3");
-        TrackInfo track2 = new TrackInfo(UUID.randomUUID(), "Artist 2", "Title 2", 200, "track2.mp3");
+        TrackInfo track1 = new TrackInfo(UUID.randomUUID(), "Artist 1", "Title 1", "", 180, "track1.mp3");
+        TrackInfo track2 = new TrackInfo(UUID.randomUUID(), "Artist 2", "Title 2", "", 200, "track2.mp3");
 
         when(trackQueueRepository.countQueued()).thenReturn(3);
         when(properties.targetSize()).thenReturn(5);
@@ -82,9 +82,9 @@ class FillQueueServiceTest {
 
     @Test
     void fillQueue_tracksAlreadyInQueue_shouldSkipRepeatingTracks() {
-        TrackInfo trackA = new TrackInfo(UUID.randomUUID(), "A", "A", 180, "a.mp3");
-        TrackInfo trackB = new TrackInfo(UUID.randomUUID(), "B", "B", 180, "b.mp3");
-        TrackInfo trackC = new TrackInfo(UUID.randomUUID(), "C", "C", 180, "c.mp3");
+        TrackInfo trackA = new TrackInfo(UUID.randomUUID(), "A", "A", "", 180, "a.mp3");
+        TrackInfo trackB = new TrackInfo(UUID.randomUUID(), "B", "B", "", 180, "b.mp3");
+        TrackInfo trackC = new TrackInfo(UUID.randomUUID(), "C", "C", "", 180, "c.mp3");
 
         when(trackQueueRepository.countQueued()).thenReturn(0);
         when(properties.targetSize()).thenReturn(5);
@@ -111,7 +111,7 @@ class FillQueueServiceTest {
 
     @Test
     void fillQueue_strategyReturnsEmptyList_shouldDoNothing() {
-        TrackInfo track = new TrackInfo(UUID.randomUUID(), "Artist", "Title", 180, "track.mp3");
+        TrackInfo track = new TrackInfo(UUID.randomUUID(), "Artist", "Title", "", 180, "track.mp3");
 
         when(trackQueueRepository.countQueued()).thenReturn(0);
         when(properties.targetSize()).thenReturn(5);

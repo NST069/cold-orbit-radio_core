@@ -3,14 +3,12 @@ package com.coradio.rotation.application.service;
 import com.coradio.rotation.application.dto.TrackInfo;
 import com.coradio.rotation.application.dto.request.LiquidsoapRequest;
 import com.coradio.rotation.domain.context.NowPlayingStateContext;
+import com.coradio.rotation.domain.enums.NotificationEvent;
 import com.coradio.rotation.domain.enums.PlaybackStatus;
-import com.coradio.rotation.domain.enums.ScrobblerProvider;
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
-import com.coradio.rotation.domain.model.ScrobbleJobItem;
 import com.coradio.rotation.domain.model.TrackQueueItem;
 import com.coradio.rotation.domain.port.out.liquidsoap.PlaybackEnginePort;
 import com.coradio.rotation.domain.port.out.persistence.PlaybackHistoryRepositoryPort;
-import com.coradio.rotation.domain.port.out.persistence.ScrobbleJobRepositoryPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackCatalogPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackQueueRepositoryPort;
 import org.junit.jupiter.api.Test;
@@ -34,7 +32,7 @@ class PlaybackEventServiceTest {
     private PlaybackHistoryRepositoryPort playbackHistoryRepository;
 
     @Mock
-    private ScrobbleJobRepositoryPort scrobblerJobRepository;
+    private ScrobbleService scrobbleService;
 
     @Mock
     private TrackQueueRepositoryPort trackQueueRepository;
@@ -44,9 +42,6 @@ class PlaybackEventServiceTest {
 
     @Mock
     private PlaybackEnginePort playbackEngine;
-
-    @Mock
-    private ScrobbleNowPlayingService scrobbleNowPlayingService;
 
     @Mock
     private NowPlayingStateContext nowPlayingStateContext;
@@ -85,6 +80,7 @@ class PlaybackEventServiceTest {
                 trackId,
                 "KTRSS",
                 "ATLAS",
+                "",
                 100,
                 "1234.mp3"
         );
@@ -108,7 +104,7 @@ class PlaybackEventServiceTest {
 
         verify(trackQueueRepository).markPlaying(queueId);
         verify(playbackHistoryRepository).save(any(PlaybackHistoryItem.class));
-        verify(scrobbleNowPlayingService).update(history);
+        verify(scrobbleService).publish(NotificationEvent.NOW_PLAYING, trackId, track.artist(), track.title(), track.album(), track.duration(), history.playedAt());
     }
 
     @Test
@@ -144,7 +140,7 @@ class PlaybackEventServiceTest {
     }
 
     @Test
-    void shouldCreateScrobbleJobsOnTrackScrobble() {
+    void shouldSendScrobbleEventOnTrackScrobble() {
 
         LiquidsoapRequest request = new LiquidsoapRequest(
                 "track_scrobble",
@@ -164,15 +160,14 @@ class PlaybackEventServiceTest {
                 "ATLAS",
                 "",
                 Instant.now(),
-                120
+                100
         );
 
         when(playbackHistoryRepository.findLatestByArtistAndTitle("KTRSS", "ATLAS")).thenReturn(Optional.of(history));
-        when(scrobblerJobRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.handleLiquidsoapEvent(request);
 
-        verify(scrobblerJobRepository, times(ScrobblerProvider.values().length)).save(any(ScrobbleJobItem.class));
+        verify(scrobbleService, times(1)).publish(NotificationEvent.SCROBBLE, history.trackId(), history.artist(), history.title(), history.album(), history.duration(), history.playedAt());
     }
 
 }

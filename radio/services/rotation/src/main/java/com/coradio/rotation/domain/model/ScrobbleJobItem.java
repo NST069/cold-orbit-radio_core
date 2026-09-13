@@ -5,6 +5,7 @@ import com.coradio.rotation.domain.enums.ScrobblerProvider;
 import java.time.Instant;
 import java.util.UUID;
 
+@Deprecated
 public record ScrobbleJobItem(
         UUID id,
         PlaybackHistoryItem playbackHistoryItem,
