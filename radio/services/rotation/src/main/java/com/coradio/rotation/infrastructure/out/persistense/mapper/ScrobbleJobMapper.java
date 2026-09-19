@@ -3,6 +3,7 @@ package com.coradio.rotation.infrastructure.out.persistense.mapper;
 import com.coradio.rotation.domain.model.ScrobbleJobItem;
 import com.coradio.rotation.infrastructure.out.persistense.entity.ScrobbleJobEntity;
 
+@Deprecated
 public class ScrobbleJobMapper {
 
     public static ScrobbleJobItem toDomain(ScrobbleJobEntity entity) {

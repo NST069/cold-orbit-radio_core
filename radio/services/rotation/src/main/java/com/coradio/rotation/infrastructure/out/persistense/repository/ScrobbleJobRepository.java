@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
+@Deprecated
 public interface ScrobbleJobRepository extends JpaRepository<ScrobbleJobEntity, UUID> {
     List<ScrobbleJobEntity> findAllByStatus(JobStatus jobStatus);
 

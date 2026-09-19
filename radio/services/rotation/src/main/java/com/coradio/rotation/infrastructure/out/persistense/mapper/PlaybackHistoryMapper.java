@@ -3,6 +3,7 @@ package com.coradio.rotation.infrastructure.out.persistense.mapper;
 import com.coradio.rotation.domain.model.PlaybackHistoryItem;
 import com.coradio.rotation.infrastructure.out.persistense.entity.PlaybackHistoryEntity;
 
+@Deprecated
 public class PlaybackHistoryMapper {
 
     public static PlaybackHistoryItem toDomain(PlaybackHistoryEntity playbackHistoryEntity) {

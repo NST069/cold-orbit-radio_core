@@ -9,6 +9,8 @@ public interface RedisCachePort {
 
     void put(String key, String value, Duration ttl);
 
+    void put(String key, String value);
+
     void delete(String key);
 
 }

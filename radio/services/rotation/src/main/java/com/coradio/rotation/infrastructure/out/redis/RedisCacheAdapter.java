@@ -26,6 +26,11 @@ public class RedisCacheAdapter implements RedisCachePort {
     }
 
     @Override
+    public void put(String key, String value) {
+        redisTemplate.opsForValue().set(key, value);
+    }
+
+    @Override
     public void delete(String key) {
         redisTemplate.delete(key);
     }

@@ -1,6 +1,5 @@
 package com.coradio.rotation.application.service;
 
-import com.coradio.rotation.application.dto.TrackInfo;
 import com.coradio.rotation.domain.enums.NotificationEvent;
 import com.coradio.rotation.domain.model.ScrobbleEvent;
 import com.coradio.rotation.domain.model.ScrobbleTrack;
@@ -41,7 +40,8 @@ public class ScrobbleService {
                 UUID.randomUUID(),
                 eventType,
                 scrobbleTrack,
-                playedAt.toEpochMilli()
+                playedAt.getEpochSecond(),
+                (eventType == NotificationEvent.NOW_PLAYING) ? (playedAt.getEpochSecond() + scrobbleTrack.duration()) : -1
         );
 
         log.debug("Sending event {} to scrobblers. eventId: {}", eventType, event.eventId());

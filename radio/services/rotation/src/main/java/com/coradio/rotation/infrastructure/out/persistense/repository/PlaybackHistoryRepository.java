@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
+@Deprecated
 public interface PlaybackHistoryRepository extends JpaRepository<PlaybackHistoryEntity, UUID> {
 
     List<PlaybackHistoryEntity> findAllByPlayedAtAfter(Instant threshold);

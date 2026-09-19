@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@Deprecated
 public class ScrobbleJobAdapter implements ScrobbleJobRepositoryPort {
 
     private final ScrobbleJobRepository scrobbleJobRepository;

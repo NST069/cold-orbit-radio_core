@@ -4,6 +4,7 @@ import com.coradio.rotation.domain.model.PlaybackHistoryItem;
 import java.util.List;
 import java.util.Optional;
 
+@Deprecated
 public interface PlaybackHistoryRepositoryPort {
     PlaybackHistoryItem save(PlaybackHistoryItem playbackHistoryItem);
 

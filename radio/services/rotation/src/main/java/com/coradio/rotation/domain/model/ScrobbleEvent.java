@@ -7,6 +7,7 @@ public record ScrobbleEvent(
         UUID eventId,
         NotificationEvent eventType,
         ScrobbleTrack track,
-        long playedAt
+        long playedAt,
+        long expiresAt
 ) {
 }

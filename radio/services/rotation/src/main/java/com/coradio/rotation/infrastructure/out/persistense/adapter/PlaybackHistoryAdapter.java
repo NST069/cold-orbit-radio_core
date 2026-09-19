@@ -13,6 +13,7 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@Deprecated
 public class PlaybackHistoryAdapter implements PlaybackHistoryRepositoryPort {
 
     private final PlaybackHistoryRepository playbackHistoryRepository;

@@ -97,6 +97,8 @@ rotation:
     gc-orphan-cron: "0 0 * * * *"
     scrobble-cron: "*/5 * * * * *"
     sync-icecast-cron: "*/5 * * * * *"
+    state-caching-cron: "0 */5 * * * *"
+    update-track-stats-cron: "0 0 * * * *"
 
 logging:
   level:

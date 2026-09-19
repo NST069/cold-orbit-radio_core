@@ -22,6 +22,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated
 public class PlaybackHistoryEntity {
 
     @Id

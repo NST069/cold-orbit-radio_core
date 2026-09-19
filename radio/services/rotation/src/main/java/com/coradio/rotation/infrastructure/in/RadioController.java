@@ -1,7 +1,7 @@
 package com.coradio.rotation.infrastructure.in;
 
 import com.coradio.rotation.application.dto.response.NowPlayingResponse;
-import com.coradio.rotation.application.dto.response.PlaybackHistoryItemDto;
+import com.coradio.rotation.domain.context.RecentTrack;
 import com.coradio.rotation.application.dto.response.RadioInfoResponse;
 import com.coradio.rotation.domain.port.in.LastPlayedUseCase;
 import com.coradio.rotation.domain.port.in.RadioInfoUseCase;
@@ -34,7 +34,7 @@ public class RadioController {
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<PlaybackHistoryItemDto>> history() {
+    public ResponseEntity<List<RecentTrack>> history() {
         return ResponseEntity.ok(lastPlayedService.getLastPlayed());
     }
 

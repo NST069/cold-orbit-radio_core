@@ -21,6 +21,7 @@ import org.springframework.data.annotation.CreatedDate;
 import java.time.Instant;
 import java.util.UUID;
 
+@Deprecated
 @Entity
 @Table(name = "scrobble_jobs")
 @Builder
