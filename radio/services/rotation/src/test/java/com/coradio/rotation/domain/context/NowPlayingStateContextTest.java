@@ -25,7 +25,7 @@ class NowPlayingStateContextTest {
                 null
         );
 
-        context.setCurrentTrack(track);
+        context.set(track);
 
         NowPlayingResponse dto = context.toDto();
 

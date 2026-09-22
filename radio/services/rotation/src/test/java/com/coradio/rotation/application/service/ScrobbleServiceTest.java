@@ -56,7 +56,7 @@ class ScrobbleServiceTest {
 
         assertNotNull(actual.eventId());
         assertEquals(eventType, actual.eventType());
-        assertEquals(playedAt.toEpochMilli(), actual.playedAt());
+        assertEquals(playedAt.getEpochSecond(), actual.playedAt());
 
         ScrobbleTrack track = actual.track();
 

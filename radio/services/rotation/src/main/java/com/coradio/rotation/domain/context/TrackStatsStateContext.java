@@ -2,7 +2,6 @@ package com.coradio.rotation.domain.context;
 
 import lombok.Getter;
 import org.springframework.stereotype.Component;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
