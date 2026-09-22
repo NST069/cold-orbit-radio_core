@@ -2,7 +2,6 @@ package com.coradio.rotation.infrastructure.out.redis;
 
 import com.coradio.rotation.domain.model.ScrobbleEvent;
 import com.coradio.rotation.domain.port.out.scrobbler.ScrobbleEventPublisher;
-import com.coradio.rotation.infrastructure.exception.ScrobbleEventPublishingException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,6 @@ public class RedisScrobbleEventPublisher implements ScrobbleEventPublisher {
             );
         } catch (JsonProcessingException e) {
             log.error("Failed to publish scrobble event", e);
-            //throw new ScrobbleEventPublishingException("Failed to publish scrobble event: " + e.getMessage());
         }
     }
 }
