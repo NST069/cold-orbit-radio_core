@@ -1,12 +1,9 @@
 package com.coradio.tgfetch.infrastructure.out.persistence.mapper
 
-import com.coradio.tgfetch.domain.enums.AnalysisJobStatus
 import com.coradio.tgfetch.domain.enums.TrackFileStatus
-import com.coradio.tgfetch.domain.model.AnalysisJob
 import com.coradio.tgfetch.domain.model.TelegramPost
 import com.coradio.tgfetch.domain.model.Track
 import com.coradio.tgfetch.domain.model.TrackFile
-import com.coradio.tgfetch.infrastructure.out.persistence.entity.AnalysisJobEntity
 import com.coradio.tgfetch.infrastructure.out.persistence.entity.TelegramPostEntity
 import com.coradio.tgfetch.infrastructure.out.persistence.entity.TrackEntity
 import com.coradio.tgfetch.infrastructure.out.persistence.entity.TrackFileEntity
@@ -21,8 +18,6 @@ object MockEntities {
     private val trackFileId = UUID.randomUUID()
 
     private val postId = UUID.randomUUID()
-
-    private val jobId = UUID.randomUUID()
 
     private val now = Instant.now()
 
@@ -58,16 +53,6 @@ object MockEntities {
         this.publishedAt = now.minus(5, ChronoUnit.DAYS)
     }
 
-    val mockAnalysisJobEntity = AnalysisJobEntity().apply {
-        this.id = jobId
-        this.trackFileEntity = mockTrackFileEntity
-        this.status = AnalysisJobStatus.COMPLETED
-        this.createdAt = now.minus(5, ChronoUnit.MINUTES)
-        this.startedAt = now.minus(5, ChronoUnit.MINUTES)
-        this.finishedAt = now
-        this.errorMessage = "error"
-    }
-
     val mockTrack = Track(
         id = trackId,
         title = "title",
@@ -98,13 +83,4 @@ object MockEntities {
         publishedAt = now.minus(5, ChronoUnit.DAYS),
     )
 
-    val mockAnalysisJob = AnalysisJob(
-        id = jobId,
-        trackFile = mockTrackFile,
-        status = AnalysisJobStatus.COMPLETED,
-        createdAt = now.minus(5, ChronoUnit.MINUTES),
-        startedAt = now.minus(5, ChronoUnit.MINUTES),
-        finishedAt = now,
-        errorMessage = "error",
-    )
 }

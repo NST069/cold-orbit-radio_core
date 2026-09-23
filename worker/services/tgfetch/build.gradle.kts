@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.coradio"
-version = "1.0.0"
+version = "1.0.1"
 description = "tgfetch"
 
 java {
@@ -22,6 +22,7 @@ kotlin {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
