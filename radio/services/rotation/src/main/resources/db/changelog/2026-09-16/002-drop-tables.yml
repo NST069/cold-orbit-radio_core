@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-playback_history-and-scrobble_jobs
+      author: NiKryukov
+      changes:
+        - dropTable:
+            tableName: scrobble_jobs
+        - dropTable:
+            tableName: playback_history

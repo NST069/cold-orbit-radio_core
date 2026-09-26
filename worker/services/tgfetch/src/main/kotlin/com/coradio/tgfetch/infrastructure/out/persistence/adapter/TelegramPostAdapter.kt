@@ -5,6 +5,7 @@ import com.coradio.tgfetch.domain.model.view.TelegramPostView
 import com.coradio.tgfetch.domain.port.out.persistence.TelegramPostRepositoryPort
 import com.coradio.tgfetch.infrastructure.out.persistence.mapper.TelegramPostMapper
 import com.coradio.tgfetch.infrastructure.out.persistence.repository.TelegramPostRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import java.util.UUID
 
@@ -18,21 +19,25 @@ class TelegramPostAdapter(
         return TelegramPostMapper.toDomain(saved)
     }
 
+    @Cacheable(cacheNames = ["telegram-post"])
     override fun findById(id: UUID): TelegramPost? {
         return telegramPostRepository.findById(id)
             .map(TelegramPostMapper::toDomain)
             .orElse(null)
     }
 
+    @Cacheable(cacheNames = ["telegram-post"])
     override fun findAll(): List<TelegramPost> {
         return telegramPostRepository.findAll()
             .map(TelegramPostMapper::toDomain)
     }
 
+    @Cacheable(cacheNames = ["telegram-post"])
     override fun deleteById(id: UUID) {
         telegramPostRepository.deleteById(id)
     }
 
+    @Cacheable(cacheNames = ["telegram-post"])
     override fun findByChannelAndMessageId(
         channelId: Long,
         messageId: Long

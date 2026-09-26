@@ -2,12 +2,11 @@ package com.coradio.rotation.application.service;
 
 import com.coradio.rotation.application.dto.TrackInfo;
 import com.coradio.rotation.application.config.QueueProperties;
+import com.coradio.rotation.domain.context.RecentTracksStateContext;
 import com.coradio.rotation.domain.enums.PlaybackStatus;
-import com.coradio.rotation.domain.model.PlaybackHistoryItem;
 import com.coradio.rotation.domain.model.TrackQueueItem;
 import com.coradio.rotation.domain.port.in.FillQueueUseCase;
 import com.coradio.rotation.domain.port.out.dj.TrackSelectionStrategy;
-import com.coradio.rotation.domain.port.out.persistence.PlaybackHistoryRepositoryPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackCatalogPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackQueueRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -30,7 +30,7 @@ public class FillQueueService implements FillQueueUseCase {
 
     private final TrackSelectionStrategy trackSelectionStrategy;
 
-    private final PlaybackHistoryRepositoryPort playbackHistoryRepository;
+    private final RecentTracksStateContext recentTracksStateContext;
 
     @Override
     public void fillQueue() {
@@ -44,7 +44,7 @@ public class FillQueueService implements FillQueueUseCase {
         List<UUID> queuedTrackIds = trackQueueRepository.findActiveTrackIds();
         candidates.removeIf(track -> queuedTrackIds.contains(track.id()));
 
-        List<PlaybackHistoryItem> history = playbackHistoryRepository.findAllInRange(properties.historyHours());
+        Set<UUID> history = recentTracksStateContext.getRecentTrackIds(candidates.size());
 
         List<TrackInfo> selected = trackSelectionStrategy.selectTracks(candidates, requiredTracks, history);
 

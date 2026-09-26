@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: drop-analysis_jobs
+      author: NiKryukov
+      changes:
+        - dropTable:
+            tableName: analysis_jobs

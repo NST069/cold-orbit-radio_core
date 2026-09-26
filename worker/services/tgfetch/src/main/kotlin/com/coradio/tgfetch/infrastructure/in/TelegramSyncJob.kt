@@ -19,7 +19,7 @@ class TelegramSyncJob(
 ) {
     private val log = KotlinLogging.logger {}
 
-    @Scheduled(cron = "\${jobs.sync.cron}")
+    @Scheduled(cron = "\${jobs.sync-cron}")
     suspend fun executeSynchronizeTelegramChannel() {
 
         log.info{"Telegram sync started"}
@@ -29,7 +29,7 @@ class TelegramSyncJob(
         log.info{"Telegram sync finished"}
     }
 
-    @Scheduled(cron = "\${jobs.downloads.cron}")
+    @Scheduled(cron = "\${jobs.downloads-cron}")
     suspend fun executeDownloadPendingFiles() {
 
         log.info{"Downloading pending files"}
@@ -39,7 +39,7 @@ class TelegramSyncJob(
         log.info{"Downloading pending files finished"}
     }
 
-    @Scheduled(cron = "\${jobs.retry.cron}")
+    @Scheduled(cron = "\${jobs.retry-cron}")
     suspend fun executeRetryFailedFiles() {
 
         log.info{"Marking failed to retry"}

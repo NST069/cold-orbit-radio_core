@@ -24,6 +24,13 @@ spring:
       leak-detection-threshold: 60000
       connection-test-query: SELECT 1
       initialization-fail-timeout: 30000
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      timeout: 2s
+      ttl: 1h
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -55,21 +62,6 @@ icecast:
   url: ${ICECAST_URL}
   mount-point: ${ICECAST_MOUNT_POINT}
 
-scrobbler:
-  lastfm:
-    api-url: https://ws.audioscrobbler.com/2.0/
-    api-key: ${LASTFM_API_KEY}
-    api-secret: ${LASTFM_API_SECRET}
-    session-key: ${LASTFM_SESSION_KEY}
-    supports-now-playing: true
-    enabled: true
-  librefm:
-    api-url: https://libre.fm
-    username: ${LIBREFM_USERNAME}
-    password: ${LIBREFM_PASSWORD}
-    supports-now-playing: true
-    enabled: true
-
 rotation:
   queue:
     min-size: 5
@@ -88,8 +80,12 @@ rotation:
     monitor-playback-cron: "*/5 * * * * *"
     gc-processed-cron: "0 */15 * * * *"
     gc-orphan-cron: "0 0 * * * *"
-    scrobble-cron: "*/5 * * * * *"
     sync-icecast-cron: "*/5 * * * * *"
+    state-caching-cron: "0 */15 * * * *"
+    update-track-stats-cron: "0 0 * * * *"
+
+scrobble:
+  enabled: false
 
 logging:
   level:

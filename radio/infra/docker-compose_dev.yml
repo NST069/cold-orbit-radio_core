@@ -95,8 +95,8 @@ services:
     logging:
       driver: "json-file"
       options:
-    max-size: "10m"
-    max-file: "3"
+        max-size: "10m"
+        max-file: "3"
   
   liquidsoap-generator:
     build:
@@ -156,11 +156,49 @@ services:
       TZ: Europe/Moscow
     networks:
       - cornet
+
+  redis:
+    image: redis:8-alpine
+    container_name: cor-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: >
+      sh -c "redis-server --requirepass $$REDIS_PASSWORD
+            --appendonly yes
+            --appendfsync everysec"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cornet
+
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: cor-redis-insight
+    ports:
+      - "5540:5540"
+    environment:
+      - RI_APP_HOST=0.0.0.0
+      - RI_APP_PORT=5540
+      - RI_ACCEPT_TERMS_AND_CONDITIONS=true
+      - RI_REDIS_HOST=${REDIS_HOST}
+      - RI_REDIS_PORT=${REDIS_PORT}
+      - RI_REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - redisinsight_data:/db
+    depends_on:
+      - redis
+    networks:
+      - cornet
       
 volumes:
   postgres-data:
   minio-data:
   music-cache:
+  redis_data:
+  redisinsight_data:
   
 networks:
   cornet:

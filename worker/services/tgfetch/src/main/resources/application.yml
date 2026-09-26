@@ -21,6 +21,13 @@ spring:
       leak-detection-threshold: 60000
       connection-test-query: SELECT 1
       initialization-fail-timeout: 30000
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      timeout: 2s
+      ttl: 1h
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -49,9 +56,6 @@ storage:
   bucket: cold-orbit-radio
 
 jobs:
-  sync:
-    cron: "0 0 * * * *"
-  downloads:
-    cron: "0 */5 * * * *"
-  retry:
-    cron: "0 */15 * * * *"
+  sync-cron: "0 0 * * * *"
+  downloads-cron: "0 */5 * * * *"
+  retry-cron: "0 */15 * * * *"
