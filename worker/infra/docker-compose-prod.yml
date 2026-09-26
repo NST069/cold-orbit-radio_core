@@ -1,6 +1,6 @@
 services:
   tgate:
-    image: cor-tgate:2026.08.17-1
+    image: cor-tgate:1.0.0
     container_name: cor-tgate
     restart: unless-stopped
     environment:
@@ -19,7 +19,7 @@ services:
       - cornet
 
   tgfetch:
-    image: cor-tgfetch:2026.08.17-1
+    image: cor-tgfetch:1.0.1
     container_name: cor-tgfetch
     restart: unless-stopped
     depends_on:

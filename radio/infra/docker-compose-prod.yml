@@ -1,6 +1,6 @@
 services:
   rotation:
-    image: cor-rotation:1.0.1
+    image: cor-rotation:1.1.0
     container_name: cor-rotation
     restart: unless-stopped
     env_file: .env
@@ -60,7 +60,7 @@ services:
         max-file: "3"
 
   liquidsoap-generator:
-    image: cor-liquidsoap-generator:2026.08.17-1
+    image: cor-liquidsoap-generator:1.0.0
     container_name: cor-liquidsoap-generator
     restart: no
     mem_limit: 128m
