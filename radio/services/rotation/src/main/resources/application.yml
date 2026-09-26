@@ -84,6 +84,9 @@ rotation:
     state-caching-cron: "0 */15 * * * *"
     update-track-stats-cron: "0 0 * * * *"
 
+scrobble:
+  enabled: false
+
 logging:
   level:
     com.coradio.rotation: DEBUG
