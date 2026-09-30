@@ -1,0 +1,52 @@
+package com.coradio.notification.application.service;
+
+import com.coradio.notification.domain.port.enums.ScrobbleResult;
+import com.coradio.notification.domain.port.model.ScrobbleEvent;
+import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderPort;
+import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderRegistryPort;
+import com.coradio.notification.infrastructure.in.ProcessNowPlayingEventUseCase;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class ProcessNowPlayingEventService implements ProcessNowPlayingEventUseCase {
+
+    private final ScrobbleProviderRegistryPort registry;
+
+    @Override
+    public boolean update(ScrobbleEvent scrobbleEvent) {
+
+        if (scrobbleEvent.expiresAt() >= 0 && scrobbleEvent.expiresAt() < Instant.now().getEpochSecond()) {
+            log.info("Event {} expired. Skipping", scrobbleEvent.eventId());
+            return true;
+        }
+
+        List<ScrobbleResult> results = registry.getProviders()
+                .stream()
+                .filter(ScrobbleProviderPort::supportsNowPlaying)
+                .map(provider -> {
+                    try {
+                        log.debug("Updating nowPlaying for {} to {}", provider.provider(), scrobbleEvent.track().artist() + " - " + scrobbleEvent.track().title());
+
+                        return provider.updateNowPlaying(scrobbleEvent.track());
+                    } catch (Exception ex) {
+                        log.error("Error updating nowPlaying for {}", provider.provider(), ex);
+                        return ScrobbleResult.FAILURE;
+                    }
+                }).toList();
+
+        boolean completed = results.stream()
+                .noneMatch(result -> result == ScrobbleResult.FAILURE);
+
+        log.info("Status: [{}], completed: {}", results.stream().map(ScrobbleResult::name).collect(Collectors.joining(", ")), completed);
+
+        return completed;
+    }
+
+}

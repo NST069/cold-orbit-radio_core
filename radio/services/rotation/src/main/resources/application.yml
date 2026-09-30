@@ -85,7 +85,7 @@ rotation:
     update-track-stats-cron: "0 0 * * * *"
 
 scrobble:
-  enabled: false
+  enabled: true
 
 logging:
   level:
