@@ -82,7 +82,7 @@ public class PlaybackEventService implements PlaybackEventUseCase {
                 trackInfo.title(),
                 trackInfo.album(),
                 trackInfo.duration(),
-                Instant.now());
+                queueItem.createdAt());
     }
 
     private void handleTrackEndEvent(LiquidsoapRequest request) {
