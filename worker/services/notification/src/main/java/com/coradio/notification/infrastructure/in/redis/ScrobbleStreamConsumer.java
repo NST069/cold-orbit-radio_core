@@ -1,10 +1,11 @@
 package com.coradio.notification.infrastructure.in.redis;
 
-import com.coradio.notification.domain.port.model.ScrobbleEvent;
+import com.coradio.notification.domain.port.model.ScrobbleTrack;
+import com.coradio.notification.domain.port.model.StreamEvent;
 import com.coradio.notification.infrastructure.in.ProcessNowPlayingEventUseCase;
 import com.coradio.notification.infrastructure.in.ProcessScrobbleEventUseCase;
-import lombok.RequiredArgsConstructor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.stereotype.Component;
@@ -14,19 +15,21 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ScrobbleStreamConsumer implements RedisStreamHandler {
 
-    private static final String PAYLOAD_FIELD = "payload";
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RedisStreamConsumer consumer;
 
     private final ProcessScrobbleEventUseCase processScrobbleEventService;
 
     private final ProcessNowPlayingEventUseCase processNowPlayingEventService;
 
-    private ScrobbleEvent deserialize(String payload) {
+    private final RedisStreamProperties properties;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private ScrobbleTrack deserialize(String payload) {
         try {
             return objectMapper.readValue(
                     payload,
-                    ScrobbleEvent.class
+                    ScrobbleTrack.class
             );
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to deserialize scrobble event", e);
@@ -34,20 +37,22 @@ public class ScrobbleStreamConsumer implements RedisStreamHandler {
     }
 
     @Override
+    public String getStream() {
+        return properties.streams().scrobble();
+    }
+
+    @Override
     public boolean handle(MapRecord<String, String, String> message) {
-        log.debug("Caught message {}", message);
 
-        String payload = message.getValue().get(PAYLOAD_FIELD);
+        StreamEvent event = consumer.handle(message);
 
-        if (payload == null) throw new IllegalArgumentException("Scrobble event does not contain payload");
-
-        ScrobbleEvent event = deserialize(payload);
+        ScrobbleTrack track = deserialize(event.payload());
 
         boolean isSuccess = false;
 
         switch (event.eventType()) {
-            case SCROBBLE -> isSuccess = processScrobbleEventService.scrobble(event);
-            case NOW_PLAYING -> isSuccess = processNowPlayingEventService.update(event);
+            case SCROBBLE -> isSuccess = processScrobbleEventService.scrobble(event.eventId(), track, event.playedAt());
+            case NOW_PLAYING -> isSuccess = processNowPlayingEventService.update(event.eventId(), track, event.expiresAt());
         }
 
         return isSuccess;

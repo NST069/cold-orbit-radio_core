@@ -17,7 +17,7 @@ import java.time.Duration;
 @EnableConfigurationProperties(RedisStreamProperties.class)
 public class RedisStreamConfig {
 
-    private final ScrobbleStreamConsumer scrobbleStreamConsumer;
+    private final RedisStreamHandler redisStreamHandler;
 
     private final RedisStreamProperties properties;
 
@@ -55,7 +55,7 @@ public class RedisStreamConfig {
                 redisTemplate,
                 container,
                 properties,
-                scrobbleStreamConsumer
+                redisStreamHandler
         );
     }
 }

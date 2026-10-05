@@ -4,10 +4,10 @@ import com.coradio.notification.domain.port.enums.NotificationEvent;
 
 import java.util.UUID;
 
-public record ScrobbleEvent(
+public record StreamEvent(
         UUID eventId,
         NotificationEvent eventType,
-        ScrobbleTrack track,
+        String payload,
         long playedAt,
         long expiresAt
 ) {

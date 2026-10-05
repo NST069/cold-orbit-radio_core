@@ -7,6 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 @Component
 @Slf4j
@@ -19,9 +20,10 @@ public class RedisEventPublisher {
         redisTemplate.opsForStream().add(
                 stream,
                 Map.of("type", eventType.name(),
+                        "eventId", UUID.randomUUID().toString(),
                         "payload", payload,
-                        "createdAt", createdAt.getEpochSecond(),
-                        "expiresAt", expiresAt != null ? expiresAt.getEpochSecond() : -1
+                        "createdAt", "" + createdAt.getEpochSecond(),
+                        "expiresAt", "" + (expiresAt != null ? expiresAt.getEpochSecond() : -1)
                 )
         );
     }

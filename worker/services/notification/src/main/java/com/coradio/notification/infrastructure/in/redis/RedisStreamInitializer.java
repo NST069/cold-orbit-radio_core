@@ -17,32 +17,31 @@ public class RedisStreamInitializer {
 
     private final RedisStreamProperties properties;
 
-    private final ScrobbleStreamConsumer scrobbleStreamConsumer;
+    private final RedisStreamHandler streamHandler;
 
     public RedisStreamInitializer(
             StringRedisTemplate redisTemplate,
             StreamMessageListenerContainer<String, MapRecord<String, String, String>> container,
             RedisStreamProperties properties,
-            ScrobbleStreamConsumer scrobbleStreamConsumer
+            RedisStreamHandler streamHandler
     ) {
         this.redisTemplate = redisTemplate;
         this.container = container;
         this.properties = properties;
-        this.scrobbleStreamConsumer = scrobbleStreamConsumer;
+        this.streamHandler = streamHandler;
     }
 
     public void initialize() {
-        createConsumerGroup();
+        createConsumerGroup(streamHandler.getStream());
 
-        subscribeToScrobbleStream();
+        subscribeToStream(streamHandler.getStream());
 
         container.start();
 
         log.info("Redis stream listener started");
     }
 
-    private void createConsumerGroup() {
-        String stream = properties.streams().scrobble();
+    private void createConsumerGroup(String stream) {
         String group = properties.consumerGroup();
 
         try {
@@ -66,8 +65,7 @@ public class RedisStreamInitializer {
         }
     }
 
-    private void subscribeToScrobbleStream() {
-        String stream = properties.streams().scrobble();
+    private void subscribeToStream(String stream) {
         String group = properties.consumerGroup();
         String consumer = properties.consumerName();
 
@@ -79,7 +77,7 @@ public class RedisStreamInitializer {
                         stream,
                         ReadOffset.lastConsumed()
                 ),
-                scrobbleStreamConsumer::handle
+                streamHandler::handle
         );
     }
 

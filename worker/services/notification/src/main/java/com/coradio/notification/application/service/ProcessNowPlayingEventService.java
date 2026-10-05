@@ -1,7 +1,7 @@
 package com.coradio.notification.application.service;
 
 import com.coradio.notification.domain.port.enums.ScrobbleResult;
-import com.coradio.notification.domain.port.model.ScrobbleEvent;
+import com.coradio.notification.domain.port.model.ScrobbleTrack;
 import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderPort;
 import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderRegistryPort;
 import com.coradio.notification.infrastructure.in.ProcessNowPlayingEventUseCase;
@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,10 +21,10 @@ public class ProcessNowPlayingEventService implements ProcessNowPlayingEventUseC
     private final ScrobbleProviderRegistryPort registry;
 
     @Override
-    public boolean update(ScrobbleEvent scrobbleEvent) {
+    public boolean update(UUID eventId, ScrobbleTrack track, long expiresAt) {
 
-        if (scrobbleEvent.expiresAt() >= 0 && scrobbleEvent.expiresAt() < Instant.now().getEpochSecond()) {
-            log.info("Event {} expired. Skipping", scrobbleEvent.eventId());
+        if (expiresAt >= 0 && expiresAt < Instant.now().getEpochSecond()) {
+            log.info("Event {} expired. Skipping", eventId);
             return true;
         }
 
@@ -32,9 +33,9 @@ public class ProcessNowPlayingEventService implements ProcessNowPlayingEventUseC
                 .filter(ScrobbleProviderPort::supportsNowPlaying)
                 .map(provider -> {
                     try {
-                        log.debug("Updating nowPlaying for {} to {}", provider.provider(), scrobbleEvent.track().artist() + " - " + scrobbleEvent.track().title());
+                        log.debug("Updating nowPlaying for {} to {}", provider.provider(), track.artist() + " - " + track.title());
 
-                        return provider.updateNowPlaying(scrobbleEvent.track());
+                        return provider.updateNowPlaying(track);
                     } catch (Exception ex) {
                         log.error("Error updating nowPlaying for {}", provider.provider(), ex);
                         return ScrobbleResult.FAILURE;
