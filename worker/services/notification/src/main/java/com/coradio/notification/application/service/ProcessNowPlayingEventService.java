@@ -1,10 +1,10 @@
 package com.coradio.notification.application.service;
 
-import com.coradio.notification.domain.port.enums.ScrobbleResult;
-import com.coradio.notification.domain.port.model.ScrobbleTrack;
-import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderPort;
-import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderRegistryPort;
-import com.coradio.notification.infrastructure.in.ProcessNowPlayingEventUseCase;
+import com.coradio.notification.domain.enums.ScrobbleResult;
+import com.coradio.notification.domain.model.ScrobbleTrack;
+import com.coradio.notification.domain.out.scrobbler.ScrobbleProviderPort;
+import com.coradio.notification.domain.out.scrobbler.ScrobbleProviderRegistryPort;
+import com.coradio.notification.domain.port.in.ProcessNowPlayingEventUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

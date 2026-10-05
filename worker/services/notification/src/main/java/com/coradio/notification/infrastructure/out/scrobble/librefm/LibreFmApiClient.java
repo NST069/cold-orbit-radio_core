@@ -1,6 +1,6 @@
 package com.coradio.notification.infrastructure.out.scrobble.librefm;
 
-import com.coradio.notification.domain.port.enums.ScrobbleResult;
+import com.coradio.notification.domain.enums.ScrobbleResult;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;

@@ -1,4 +1,4 @@
-package com.coradio.notification.domain.port.model;
+package com.coradio.notification.domain.model;
 
 import java.util.UUID;
 

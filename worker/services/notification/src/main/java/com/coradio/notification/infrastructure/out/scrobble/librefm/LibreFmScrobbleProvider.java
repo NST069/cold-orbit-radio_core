@@ -1,9 +1,9 @@
 package com.coradio.notification.infrastructure.out.scrobble.librefm;
 
-import com.coradio.notification.domain.port.enums.ScrobblerProvider;
-import com.coradio.notification.domain.port.model.ScrobbleTrack;
-import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderPort;
-import com.coradio.notification.domain.port.enums.ScrobbleResult;
+import com.coradio.notification.domain.enums.ScrobblerProvider;
+import com.coradio.notification.domain.model.ScrobbleTrack;
+import com.coradio.notification.domain.out.scrobbler.ScrobbleProviderPort;
+import com.coradio.notification.domain.enums.ScrobbleResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

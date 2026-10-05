@@ -1,9 +1,9 @@
 package com.coradio.notification.infrastructure.in.redis;
 
-import com.coradio.notification.domain.port.model.ScrobbleTrack;
-import com.coradio.notification.domain.port.model.StreamEvent;
-import com.coradio.notification.infrastructure.in.ProcessNowPlayingEventUseCase;
-import com.coradio.notification.infrastructure.in.ProcessScrobbleEventUseCase;
+import com.coradio.notification.domain.model.ScrobbleTrack;
+import com.coradio.notification.domain.model.StreamEvent;
+import com.coradio.notification.domain.port.in.ProcessNowPlayingEventUseCase;
+import com.coradio.notification.domain.port.in.ProcessScrobbleEventUseCase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

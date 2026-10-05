@@ -1,6 +1,6 @@
-package com.coradio.notification.infrastructure.in;
+package com.coradio.notification.domain.port.in;
 
-import com.coradio.notification.domain.port.model.ScrobbleTrack;
+import com.coradio.notification.domain.model.ScrobbleTrack;
 import java.util.UUID;
 
 public interface ProcessScrobbleEventUseCase {

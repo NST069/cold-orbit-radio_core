@@ -1,6 +1,6 @@
-package com.coradio.notification.domain.port.out.scrobbler;
+package com.coradio.notification.domain.out.scrobbler;
 
-import com.coradio.notification.domain.port.enums.ScrobblerProvider;
+import com.coradio.notification.domain.enums.ScrobblerProvider;
 import java.util.List;
 
 public interface ScrobbleProviderRegistryPort {

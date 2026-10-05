@@ -1,4 +1,4 @@
-package com.coradio.notification.domain.port.enums;
+package com.coradio.notification.domain.enums;
 
 public enum NotificationEvent {
     SCROBBLE,

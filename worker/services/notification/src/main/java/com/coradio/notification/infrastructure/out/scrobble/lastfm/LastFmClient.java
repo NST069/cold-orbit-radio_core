@@ -1,7 +1,7 @@
 package com.coradio.notification.infrastructure.out.scrobble.lastfm;
 
-import com.coradio.notification.domain.port.enums.ScrobbleResult;
-import com.coradio.notification.domain.port.model.ScrobbleTrack;
+import com.coradio.notification.domain.enums.ScrobbleResult;
+import com.coradio.notification.domain.model.ScrobbleTrack;
 import com.coradio.notification.infrastructure.exception.ScrobblerBadSessionException;
 import com.coradio.notification.infrastructure.out.scrobble.lastfm.dto.LastFmSession;
 import lombok.RequiredArgsConstructor;

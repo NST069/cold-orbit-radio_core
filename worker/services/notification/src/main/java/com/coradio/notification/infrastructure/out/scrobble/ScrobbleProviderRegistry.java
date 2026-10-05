@@ -1,8 +1,8 @@
 package com.coradio.notification.infrastructure.out.scrobble;
 
-import com.coradio.notification.domain.port.enums.ScrobblerProvider;
-import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderPort;
-import com.coradio.notification.domain.port.out.scrobbler.ScrobbleProviderRegistryPort;
+import com.coradio.notification.domain.enums.ScrobblerProvider;
+import com.coradio.notification.domain.out.scrobbler.ScrobbleProviderPort;
+import com.coradio.notification.domain.out.scrobbler.ScrobbleProviderRegistryPort;
 import com.coradio.notification.infrastructure.exception.ScrobbleProviderNotFoundException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,7 @@
 package com.coradio.notification.infrastructure.in.redis;
 
-import com.coradio.notification.domain.port.enums.NotificationEvent;
-import com.coradio.notification.domain.port.model.StreamEvent;
+import com.coradio.notification.domain.enums.NotificationEvent;
+import com.coradio.notification.domain.model.StreamEvent;
 import com.coradio.notification.infrastructure.exception.UnimplementedEventException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -22,6 +22,8 @@ notification:
       errors: error-events
     consumer-group: notification-service
     consumer-name: notification-1
+  jobs:
+    stream-pending-cleanup-cron: "0 0 * * * *"
 
 scrobbler:
   lastfm:

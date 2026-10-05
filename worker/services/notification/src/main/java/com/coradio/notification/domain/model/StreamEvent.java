@@ -1,6 +1,6 @@
-package com.coradio.notification.domain.port.model;
+package com.coradio.notification.domain.model;
 
-import com.coradio.notification.domain.port.enums.NotificationEvent;
+import com.coradio.notification.domain.enums.NotificationEvent;
 
 import java.util.UUID;
 

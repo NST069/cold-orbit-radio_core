@@ -1,8 +1,8 @@
-package com.coradio.notification.domain.port.out.scrobbler;
+package com.coradio.notification.domain.out.scrobbler;
 
-import com.coradio.notification.domain.port.enums.ScrobbleResult;
-import com.coradio.notification.domain.port.enums.ScrobblerProvider;
-import com.coradio.notification.domain.port.model.ScrobbleTrack;
+import com.coradio.notification.domain.enums.ScrobbleResult;
+import com.coradio.notification.domain.enums.ScrobblerProvider;
+import com.coradio.notification.domain.model.ScrobbleTrack;
 
 public interface ScrobbleProviderPort {
 

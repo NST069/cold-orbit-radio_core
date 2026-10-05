@@ -1,8 +1,8 @@
 package com.coradio.notification.infrastructure.out.scrobble.librefm;
 
-import com.coradio.notification.domain.port.model.ScrobbleTrack;
+import com.coradio.notification.domain.model.ScrobbleTrack;
 import com.coradio.notification.infrastructure.exception.ScrobblerBadSessionException;
-import com.coradio.notification.domain.port.enums.ScrobbleResult;
+import com.coradio.notification.domain.enums.ScrobbleResult;
 import com.coradio.notification.infrastructure.out.scrobble.librefm.dto.LibreFmSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
