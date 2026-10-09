@@ -28,9 +28,13 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
+      username: ${REDIS_USERNAME}
       password: ${REDIS_PASSWORD}
-      timeout: 2s
+      connect-timeout: 10s
+      timeout: 30s
       ttl: 1h
+      ssl:
+        enabled: true
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
