@@ -4,12 +4,11 @@ import com.coradio.tgfetch.domain.port.out.storage.StorageGatewayPort
 import com.coradio.tgfetch.infrastructure.out.storage.config.StorageProperties
 import com.coradio.tgfetch.infrastructure.exception.StorageException
 import io.github.oshai.kotlinlogging.KotlinLogging.logger
+import io.minio.ListObjectsArgs
 import io.minio.MinioClient
 import io.minio.PutObjectArgs
 import io.minio.RemoveObjectArgs
 import io.minio.StatObjectArgs
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.apache.tika.Tika
 import org.springframework.stereotype.Component
 import java.nio.file.Files
@@ -74,5 +73,34 @@ class MinioStorageGatewayAdapter(
         } catch (e: Exception) {
             log.warn(e) { "Failed to remove object $key" }
         }
+    }
+
+    override fun listObjects(): List<MinioObject> {
+        val objects = mutableListOf<MinioObject>()
+
+        try {
+            val results = minioClient.listObjects(
+                ListObjectsArgs.builder()
+                    .bucket(storageProperties.bucket)
+                    .recursive(true)
+                    .build()
+            )
+
+            for (result in results) {
+                val item = result.get()
+
+                objects.add(
+                    MinioObject(
+                        storageKey = item.objectName(),
+                        lastModified = item.lastModified().toInstant()
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            log.error(e) { "Failed to list MinIO objects" }
+            throw e
+        }
+
+        return objects
     }
 }
