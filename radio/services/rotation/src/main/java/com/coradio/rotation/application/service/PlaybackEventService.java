@@ -67,7 +67,7 @@ public class PlaybackEventService implements PlaybackEventUseCase {
         TrackInfo trackInfo = trackCatalogPort.findById(queueItem.trackId())
                 .orElseThrow(() -> new TrackNotFoundException(queueItem.trackId().toString()));
 
-        trackQueueRepository.markPlaying(queueItem.id());
+        Instant playedAt = trackQueueRepository.markPlaying(queueItem.id());
 
         nowPlayingStateContext.set(trackInfo);
 
@@ -82,7 +82,7 @@ public class PlaybackEventService implements PlaybackEventUseCase {
                 trackInfo.title(),
                 trackInfo.album(),
                 trackInfo.duration(),
-                queueItem.createdAt());
+                playedAt);
     }
 
     private void handleTrackEndEvent(LiquidsoapRequest request) {

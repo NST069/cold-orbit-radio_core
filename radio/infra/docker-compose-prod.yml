@@ -18,8 +18,6 @@ services:
       STORAGE_LOCAL_PATH: /app/music
       LIQUIDSOAP_HOST: liquidsoap 
       LIQUIDSOAP_PORT: 1234
-      LIBREFM_USERNAME: ${LIBREFM_USERNAME}
-      LIBREFM_PASSWORD: ${LIBREFM_PASSWORD}
       ICECAST_MOUNT_POINT: /radio.mp3
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
@@ -40,7 +38,7 @@ services:
     image: savonet/liquidsoap:v2.4.2
     container_name: cor-liquidsoap
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 420m
     cpus: 0.4
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:4000/health" ]

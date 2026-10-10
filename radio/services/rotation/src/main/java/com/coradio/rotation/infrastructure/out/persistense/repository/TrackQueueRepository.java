@@ -70,23 +70,23 @@ public interface TrackQueueRepository extends JpaRepository<TrackQueueEntity, UU
     @Query(
             """
             update TrackQueueEntity t
-            set t.status = com.coradio.rotation.domain.enums.PlaybackStatus.PLAYING
+            set t.status = com.coradio.rotation.domain.enums.PlaybackStatus.PLAYING,
+                    t.playedAt = :playedAt
             where t.id = :id
         """
     )
-    void markPlaying(UUID id);
+    void markPlaying(UUID id, Instant playedAt);
 
     @Modifying
     @Transactional
     @Query(
             """
             update TrackQueueEntity t
-            set t.status = com.coradio.rotation.domain.enums.PlaybackStatus.PLAYED,
-                    t.playedAt = :playedAt
+            set t.status = com.coradio.rotation.domain.enums.PlaybackStatus.PLAYED
             where t.id = :id
         """
     )
-    void markPlayed(UUID id, Instant playedAt);
+    void markPlayed(UUID id);
 
     List<TrackQueueEntity> findByStatusOrderByCreatedAtAsc(PlaybackStatus status);
 

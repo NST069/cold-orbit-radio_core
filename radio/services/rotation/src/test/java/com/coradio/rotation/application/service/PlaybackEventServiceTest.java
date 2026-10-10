@@ -86,6 +86,7 @@ class PlaybackEventServiceTest {
 
         when(trackQueueRepository.findByLocalPath(request.uri())).thenReturn(Optional.of(queueItem));
         when(trackCatalogPort.findById(trackId)).thenReturn(Optional.of(track));
+        when(trackQueueRepository.markPlaying(queueId)).thenReturn(playedAt);
 
         service.handleLiquidsoapEvent(request);
 
