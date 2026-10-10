@@ -17,10 +17,14 @@ public class RedisEventPublisher {
     private final RedisTemplate<String, String> redisTemplate;
 
     public void publishToStream(NotificationEvent eventType, String stream, Instant createdAt, Instant expiresAt, String payload) {
+        publishToStream(eventType, stream, createdAt, expiresAt, payload, UUID.randomUUID());
+    }
+
+    void publishToStream(NotificationEvent eventType, String stream, Instant createdAt, Instant expiresAt, String payload, UUID eventId) {
         redisTemplate.opsForStream().add(
                 stream,
                 Map.of("type", eventType.name(),
-                        "eventId", UUID.randomUUID().toString(),
+                        "eventId", eventId.toString(),
                         "payload", payload,
                         "createdAt", "" + createdAt.getEpochSecond(),
                         "expiresAt", "" + (expiresAt != null ? expiresAt.getEpochSecond() : -1)
