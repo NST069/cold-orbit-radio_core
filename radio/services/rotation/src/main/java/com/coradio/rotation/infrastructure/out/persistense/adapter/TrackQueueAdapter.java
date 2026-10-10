@@ -91,12 +91,12 @@ public class TrackQueueAdapter implements TrackQueueRepositoryPort {
 
     @Override
     public void markPlaying(UUID id) {
-        trackQueueRepository.markPlaying(id);
+        trackQueueRepository.markPlaying(id, Instant.now());
     }
 
     @Override
     public void markPlayed(UUID id) {
-        trackQueueRepository.markPlayed(id, Instant.now());
+        trackQueueRepository.markPlayed(id);
     }
 
     @Override
