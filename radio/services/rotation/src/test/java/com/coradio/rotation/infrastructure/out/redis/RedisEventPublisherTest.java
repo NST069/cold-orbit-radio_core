@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StreamOperations;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -41,22 +42,25 @@ class RedisEventPublisherTest {
         Instant createdAt = Instant.parse("2026-10-03T21:00:00Z");
         Instant expiresAt = Instant.parse("2026-10-03T21:04:05Z");
         String payload = "{\"trackId\":\"123\"}";
+        UUID eventId = UUID.randomUUID();
 
         publisher.publishToStream(
                 eventType,
                 stream,
                 createdAt,
                 expiresAt,
-                payload
+                payload,
+                eventId
         );
 
         verify(streamOperations).add(
                 eq(stream),
                 eq(Map.of(
                         "type", eventType.name(),
+                        "eventId", eventId.toString(),
                         "payload", payload,
-                        "createdAt", createdAt.getEpochSecond(),
-                        "expiresAt", expiresAt.getEpochSecond()
+                        "createdAt", ""+createdAt.getEpochSecond(),
+                        "expiresAt", ""+expiresAt.getEpochSecond()
                 ))
         );
     }
@@ -67,22 +71,25 @@ class RedisEventPublisherTest {
         String stream = "scrobble-events";
         Instant createdAt = Instant.parse("2026-10-03T21:00:00Z");
         String payload = "{\"trackId\":\"123\"}";
+        UUID eventId = UUID.randomUUID();
 
         publisher.publishToStream(
                 eventType,
                 stream,
                 createdAt,
                 null,
-                payload
+                payload,
+                eventId
         );
 
         verify(streamOperations).add(
                 eq(stream),
                 eq(Map.of(
                         "type", eventType.name(),
+                        "eventId", eventId.toString(),
                         "payload", payload,
-                        "createdAt", createdAt.getEpochSecond(),
-                        "expiresAt", -1L
+                        "createdAt", ""+createdAt.getEpochSecond(),
+                        "expiresAt", "-1"
                 ))
         );
     }
