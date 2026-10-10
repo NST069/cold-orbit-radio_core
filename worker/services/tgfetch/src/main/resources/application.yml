@@ -59,3 +59,4 @@ jobs:
   sync-cron: "0 0 * * * *"
   downloads-cron: "0 */5 * * * *"
   retry-cron: "0 */15 * * * *"
+  clean-storage-cron: "0 0 3 * * *"

@@ -54,6 +54,18 @@ class TrackFileAdapter(
         return trackFileRepository.existsByTelegramFileUniqueId(telegramFileUniqueId)
     }
 
+    override fun existsByStorageKey(storageKey: String): Boolean {
+        return trackFileRepository.existsByStorageKey(storageKey)
+    }
+
+    override fun findAllStorageKeys(): List<String> {
+        return trackFileRepository.findAllStorageKeys()
+    }
+
+    override fun markToRedownload(storageKey: String): Int {
+        return trackFileRepository.markToRedownloadByStorageKey(storageKey)
+    }
+
     override fun updateStatus(id: UUID, status: TrackFileStatus, prevStatus: TrackFileStatus): Int {
         return trackFileRepository.updateStatus(id, status, prevStatus)
     }

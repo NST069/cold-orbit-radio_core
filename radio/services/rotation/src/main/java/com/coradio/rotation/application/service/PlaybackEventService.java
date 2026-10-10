@@ -16,6 +16,7 @@ import com.coradio.rotation.domain.port.out.persistence.TrackQueueRepositoryPort
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import java.time.Instant;
 
 @Service
 @Slf4j
@@ -72,7 +73,7 @@ public class PlaybackEventService implements PlaybackEventUseCase {
 
         log.debug("Track playing {}", queueItem.trackId());
 
-        recentTracksStateContext.add(trackInfo.id(), trackInfo.artist(), trackInfo.title(), queueItem.playedAt());
+        recentTracksStateContext.add(trackInfo.id(), trackInfo.artist(), trackInfo.title(), Instant.now());
         trackStatsStateContext.incrementPlayCount(trackInfo.id());
 
         scrobbleService.publish(NotificationEvent.NOW_PLAYING,
@@ -81,7 +82,7 @@ public class PlaybackEventService implements PlaybackEventUseCase {
                 trackInfo.title(),
                 trackInfo.album(),
                 trackInfo.duration(),
-                queueItem.playedAt());
+                queueItem.createdAt());
     }
 
     private void handleTrackEndEvent(LiquidsoapRequest request) {

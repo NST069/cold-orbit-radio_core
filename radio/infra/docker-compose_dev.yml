@@ -24,6 +24,10 @@ services:
       LIQUIDSOAP_PORT: 4000
       LIBREFM_USERNAME: ${LIBREFM_USERNAME}
       LIBREFM_PASSWORD: ${LIBREFM_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_USERNAME: ${REDIS_USERNAME}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
@@ -165,6 +169,7 @@ services:
       - "6379:6379"
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_USERNAME=${REDIS_USERNAME}
     command: >
       sh -c "redis-server --requirepass $$REDIS_PASSWORD
             --appendonly yes

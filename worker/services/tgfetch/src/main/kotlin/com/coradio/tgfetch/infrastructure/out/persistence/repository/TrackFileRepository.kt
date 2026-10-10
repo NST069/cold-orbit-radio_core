@@ -23,6 +23,30 @@ interface TrackFileRepository : JpaRepository<TrackFileEntity, UUID> {
         telegramFileUniqueId: String
     ): Boolean
 
+    fun existsByStorageKey(storageKey: String): Boolean
+
+    @Query(
+        """
+        select tf.storageKey
+        from TrackFileEntity tf
+        where tf.storageKey is not null
+        """
+    )
+    fun findAllStorageKeys(): List<String>
+
+    @Modifying
+    @Transactional
+    @Query(
+        """
+        update TrackFileEntity t
+        set t.status = 'PENDING',
+            t.retryCount = 0,
+            t.fileName = ''
+        where t.storageKey = :storageKey
+    """
+    )
+    fun markToRedownloadByStorageKey(storageKey: String): Int
+
     @Modifying
     @Transactional
     @Query(
