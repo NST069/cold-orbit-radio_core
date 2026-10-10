@@ -16,6 +16,10 @@ interface TrackFileRepositoryPort {
 
     fun existsByTelegramFileUniqueId(telegramFileUniqueId: String): Boolean
 
+    fun existsByStorageKey(storageKey: String): Boolean
+    fun findAllStorageKeys(): List<String>
+    fun markToRedownload(storageKey: String): Int
+
     fun updateStatus(id: UUID, status: TrackFileStatus, prevStatus: TrackFileStatus): Int
     fun markReady(id: UUID, storageKey: String)
     fun incrementRetry(id: UUID)

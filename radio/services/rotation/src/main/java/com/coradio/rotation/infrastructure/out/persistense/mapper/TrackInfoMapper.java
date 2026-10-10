@@ -16,6 +16,7 @@ public class TrackInfoMapper implements RowMapper<TrackInfo> {
                 rs.getObject("id", UUID.class),
                 rs.getString("artist"),
                 rs.getString("title"),
+                rs.getString("album"),
                 rs.getInt("duration"),
                 rs.getString("storage_key")
         );

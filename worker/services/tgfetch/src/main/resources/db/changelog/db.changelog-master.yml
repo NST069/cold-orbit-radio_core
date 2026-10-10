@@ -1,3 +1,7 @@
 databaseChangeLog:
   - includeAll:
       path: db/changelog/init
+
+  # 2026-09-22 issue-58
+  - includeAll:
+      path: db/changelog/2026-09-22

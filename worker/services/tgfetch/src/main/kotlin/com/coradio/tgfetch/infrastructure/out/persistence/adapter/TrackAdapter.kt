@@ -4,6 +4,7 @@ import com.coradio.tgfetch.domain.model.Track
 import com.coradio.tgfetch.domain.port.out.persistence.TrackRepositoryPort
 import com.coradio.tgfetch.infrastructure.out.persistence.mapper.TrackMapper
 import com.coradio.tgfetch.infrastructure.out.persistence.repository.TrackRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import java.util.UUID
 
@@ -18,12 +19,14 @@ class TrackAdapter(
         return TrackMapper.toDomain(saved)
     }
 
+    @Cacheable(cacheNames = ["tracks-meta"])
     override fun findById(id: UUID): Track? {
         return trackRepository.findById(id)
             .map(TrackMapper::toDomain)
             .orElse(null)
     }
 
+    @Cacheable(cacheNames = ["tracks-meta"])
     override fun findByTitleAndArtist(
         title: String,
         artist: String
@@ -33,6 +36,7 @@ class TrackAdapter(
             .orElse(null)
     }
 
+    @Cacheable(cacheNames = ["tracks-meta"])
     override fun findAll(): List<Track> {
         return trackRepository.findAll()
             .map(TrackMapper::toDomain)

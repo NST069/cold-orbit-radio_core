@@ -20,11 +20,12 @@ class NowPlayingStateContextTest {
                 id,
                 "Artist",
                 "Track",
+                "Album",
                 245,
                 null
         );
 
-        context.setCurrentTrack(track);
+        context.set(track);
 
         NowPlayingResponse dto = context.toDto();
 

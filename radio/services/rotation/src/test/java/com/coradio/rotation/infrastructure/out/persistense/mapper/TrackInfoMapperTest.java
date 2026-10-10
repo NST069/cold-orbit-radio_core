@@ -25,6 +25,7 @@ class TrackInfoMapperTest {
         when(rs.getObject("id", UUID.class)).thenReturn(id);
         when(rs.getString("artist")).thenReturn("Artist");
         when(rs.getString("title")).thenReturn("Title");
+        when(rs.getString("album")).thenReturn("Album");
         when(rs.getInt("duration")).thenReturn(180);
         when(rs.getString("storage_key")).thenReturn("storage-key");
 
@@ -35,6 +36,7 @@ class TrackInfoMapperTest {
         assertEquals(id, result.id());
         assertEquals("Artist", result.artist());
         assertEquals("Title", result.title());
+        assertEquals("Album", result.album());
         assertEquals(180, result.duration());
         assertEquals("storage-key", result.storageKey());
     }

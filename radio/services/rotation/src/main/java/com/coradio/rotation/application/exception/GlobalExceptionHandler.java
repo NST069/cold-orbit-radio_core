@@ -29,11 +29,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @ExceptionHandler(HistoryItemNotFoundException.class)
-    public ResponseEntity<ErrorMessage> handleHistoryItemNotFoundException(HistoryItemNotFoundException ex) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
-    }
-
     @ExceptionHandler(TrackNotFoundException.class)
     public ResponseEntity<ErrorMessage> handleTrackNotFoundException(TrackNotFoundException ex) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());

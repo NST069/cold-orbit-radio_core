@@ -1,5 +1,6 @@
 package com.coradio.tgfetch.domain.port.out.storage
 
+import com.coradio.tgfetch.infrastructure.out.storage.MinioObject
 import java.nio.file.Path
 
 interface StorageGatewayPort {
@@ -16,4 +17,7 @@ interface StorageGatewayPort {
     fun delete(
         key: String
     )
+
+    fun listObjects(): List<MinioObject>
+
 }

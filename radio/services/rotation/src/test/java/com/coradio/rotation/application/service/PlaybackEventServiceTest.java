@@ -3,14 +3,11 @@ package com.coradio.rotation.application.service;
 import com.coradio.rotation.application.dto.TrackInfo;
 import com.coradio.rotation.application.dto.request.LiquidsoapRequest;
 import com.coradio.rotation.domain.context.NowPlayingStateContext;
+import com.coradio.rotation.domain.context.RecentTracksStateContext;
+import com.coradio.rotation.domain.context.TrackStatsStateContext;
+import com.coradio.rotation.domain.enums.NotificationEvent;
 import com.coradio.rotation.domain.enums.PlaybackStatus;
-import com.coradio.rotation.domain.enums.ScrobblerProvider;
-import com.coradio.rotation.domain.model.PlaybackHistoryItem;
-import com.coradio.rotation.domain.model.ScrobbleJobItem;
 import com.coradio.rotation.domain.model.TrackQueueItem;
-import com.coradio.rotation.domain.port.out.liquidsoap.PlaybackEnginePort;
-import com.coradio.rotation.domain.port.out.persistence.PlaybackHistoryRepositoryPort;
-import com.coradio.rotation.domain.port.out.persistence.ScrobbleJobRepositoryPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackCatalogPort;
 import com.coradio.rotation.domain.port.out.persistence.TrackQueueRepositoryPort;
 import org.junit.jupiter.api.Test;
@@ -22,7 +19,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -31,10 +27,7 @@ import static org.mockito.Mockito.when;
 class PlaybackEventServiceTest {
 
     @Mock
-    private PlaybackHistoryRepositoryPort playbackHistoryRepository;
-
-    @Mock
-    private ScrobbleJobRepositoryPort scrobblerJobRepository;
+    private ScrobbleService scrobbleService;
 
     @Mock
     private TrackQueueRepositoryPort trackQueueRepository;
@@ -43,13 +36,13 @@ class PlaybackEventServiceTest {
     private TrackCatalogPort trackCatalogPort;
 
     @Mock
-    private PlaybackEnginePort playbackEngine;
-
-    @Mock
-    private ScrobbleNowPlayingService scrobbleNowPlayingService;
-
-    @Mock
     private NowPlayingStateContext nowPlayingStateContext;
+
+    @Mock
+    private RecentTracksStateContext recentTracksStateContext;
+
+    @Mock
+    private TrackStatsStateContext trackStatsStateContext;
 
     @InjectMocks
     private PlaybackEventService service;
@@ -59,6 +52,7 @@ class PlaybackEventServiceTest {
 
         UUID trackId = UUID.randomUUID();
         UUID queueId = UUID.randomUUID();
+        Instant playedAt = Instant.now();
 
         LiquidsoapRequest request = new LiquidsoapRequest(
                 "track_start",
@@ -78,37 +72,25 @@ class PlaybackEventServiceTest {
                 PlaybackStatus.QUEUED,
                 "/app/music/test.mp3",
                 Instant.now(),
-                Instant.now()
+                playedAt
         );
 
         TrackInfo track = new TrackInfo(
                 trackId,
                 "KTRSS",
                 "ATLAS",
+                "",
                 100,
                 "1234.mp3"
         );
 
-        PlaybackHistoryItem history = new PlaybackHistoryItem(
-                UUID.randomUUID(),
-                trackId,
-                "KTRSS",
-                "ATLAS",
-                "",
-                Instant.now(),
-                120
-        );
-
         when(trackQueueRepository.findByLocalPath(request.uri())).thenReturn(Optional.of(queueItem));
         when(trackCatalogPort.findById(trackId)).thenReturn(Optional.of(track));
-        when(playbackEngine.getCurrentTrackDuration()).thenReturn(Optional.of("120"));
-        when(playbackHistoryRepository.save(any())).thenReturn(history);
 
         service.handleLiquidsoapEvent(request);
 
         verify(trackQueueRepository).markPlaying(queueId);
-        verify(playbackHistoryRepository).save(any(PlaybackHistoryItem.class));
-        verify(scrobbleNowPlayingService).update(history);
+        verify(scrobbleService).publish(NotificationEvent.NOW_PLAYING, trackId, track.artist(), track.title(), track.album(), track.duration(), playedAt);
     }
 
     @Test
@@ -144,7 +126,10 @@ class PlaybackEventServiceTest {
     }
 
     @Test
-    void shouldCreateScrobbleJobsOnTrackScrobble() {
+    void shouldSendScrobbleEventOnTrackScrobble() {
+
+        UUID trackId = UUID.randomUUID();
+        Instant playedAt = Instant.now();
 
         LiquidsoapRequest request = new LiquidsoapRequest(
                 "track_scrobble",
@@ -157,22 +142,21 @@ class PlaybackEventServiceTest {
                 "/app/music/test.mp3"
         );
 
-        PlaybackHistoryItem history = new PlaybackHistoryItem(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
+        TrackInfo track = new TrackInfo(
+                trackId,
                 "KTRSS",
                 "ATLAS",
                 "",
-                Instant.now(),
-                120
+                100,
+                "1234.mp3"
         );
 
-        when(playbackHistoryRepository.findLatestByArtistAndTitle("KTRSS", "ATLAS")).thenReturn(Optional.of(history));
-        when(scrobblerJobRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(nowPlayingStateContext.getCurrentTrack()).thenReturn(track);
+        when(nowPlayingStateContext.getStartedAt()).thenReturn(playedAt);
 
         service.handleLiquidsoapEvent(request);
 
-        verify(scrobblerJobRepository, times(ScrobblerProvider.values().length)).save(any(ScrobbleJobItem.class));
+        verify(scrobbleService, times(1)).publish(NotificationEvent.SCROBBLE, track.id(), track.artist(), track.title(), track.album(), track.duration(), playedAt);
     }
 
 }

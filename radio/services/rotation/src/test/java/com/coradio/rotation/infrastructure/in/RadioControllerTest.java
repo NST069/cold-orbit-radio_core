@@ -1,7 +1,7 @@
 package com.coradio.rotation.infrastructure.in;
 
 import com.coradio.rotation.application.dto.response.NowPlayingResponse;
-import com.coradio.rotation.application.dto.response.PlaybackHistoryItemDto;
+import com.coradio.rotation.domain.context.RecentTrack;
 import com.coradio.rotation.application.dto.response.RadioInfoResponse;
 import com.coradio.rotation.domain.port.in.LastPlayedUseCase;
 import com.coradio.rotation.domain.port.in.RadioInfoUseCase;
@@ -99,12 +99,12 @@ class RadioControllerTest {
     @Test
     void shouldReturnLastPlayedTracks() throws Exception {
 
-        List<PlaybackHistoryItemDto> response = List.of(
-                new PlaybackHistoryItemDto("artist1", "track1", Instant.now().minus(1, ChronoUnit.MINUTES)),
-                new PlaybackHistoryItemDto("artist2", "track2", Instant.now().minus(5, ChronoUnit.MINUTES)),
-                new PlaybackHistoryItemDto("artist3", "track3", Instant.now().minus(10, ChronoUnit.MINUTES)),
-                new PlaybackHistoryItemDto("artist4", "track4", Instant.now().minus(15, ChronoUnit.MINUTES)),
-                new PlaybackHistoryItemDto("artist5", "track5", Instant.now().minus(20, ChronoUnit.MINUTES))
+        List<RecentTrack> response = List.of(
+                new RecentTrack(UUID.randomUUID(), "artist1", "track1", Instant.now().minus(1, ChronoUnit.MINUTES).getEpochSecond()),
+                new RecentTrack(UUID.randomUUID(), "artist2", "track2", Instant.now().minus(5, ChronoUnit.MINUTES).getEpochSecond()),
+                new RecentTrack(UUID.randomUUID(), "artist3", "track3", Instant.now().minus(10, ChronoUnit.MINUTES).getEpochSecond()),
+                new RecentTrack(UUID.randomUUID(), "artist4", "track4", Instant.now().minus(15, ChronoUnit.MINUTES).getEpochSecond()),
+                new RecentTrack(UUID.randomUUID(), "artist5", "track5", Instant.now().minus(20, ChronoUnit.MINUTES).getEpochSecond())
         );
 
         when(lastPlayedService.getLastPlayed()).thenReturn(response);

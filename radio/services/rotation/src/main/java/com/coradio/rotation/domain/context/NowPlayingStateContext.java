@@ -2,18 +2,23 @@ package com.coradio.rotation.domain.context;
 
 import com.coradio.rotation.application.dto.TrackInfo;
 import com.coradio.rotation.application.dto.response.NowPlayingResponse;
-import com.coradio.rotation.domain.model.TrackQueueItem;
 import lombok.Getter;
-import lombok.Setter;
 import org.springframework.stereotype.Component;
+
+import java.time.Instant;
 
 @Component
 @Getter
-@Setter
 public class NowPlayingStateContext {
 
     private TrackInfo currentTrack;
-    private TrackQueueItem currentQueueItem;
+
+    private Instant startedAt;
+
+    public void set(TrackInfo trackInfo) {
+        this.currentTrack = trackInfo;
+        this.startedAt = Instant.now();
+    }
 
     public NowPlayingResponse toDto() {
         if (currentTrack != null)

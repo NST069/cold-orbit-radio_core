@@ -1,0 +1,50 @@
+server:
+  port: ${NOTIFICATION_PORT:8082}
+
+spring:
+  application:
+    name: notification
+  profiles:
+    default: ${APP_PROFILE:default}
+  config:
+    import: optional:file:.env[.properties]
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      username: ${REDIS_USERNAME}
+      password: ${REDIS_PASSWORD}
+      connect-timeout: 10s
+      timeout: 30s
+      ssl:
+        enabled: true
+
+notification:
+  redis:
+    streams:
+      scrobble: scrobble-events
+      errors: error-events
+    consumer-group: notification-service
+    consumer-name: notification-1
+  jobs:
+    stream-pending-cleanup-cron: "0 0 * * * *"
+
+scrobbler:
+  lastfm:
+    api-url: https://ws.audioscrobbler.com/2.0/
+    api-key: ${LASTFM_API_KEY}
+    api-secret: ${LASTFM_API_SECRET}
+    session-key: ${LASTFM_SESSION_KEY}
+    supports-now-playing: true
+    enabled: true
+  librefm:
+    api-url: https://libre.fm
+    username: ${LIBREFM_USERNAME}
+    password: ${LIBREFM_PASSWORD}
+    supports-now-playing: true
+    enabled: true
+
+
+logging:
+  level:
+    com.coradio.notification: DEBUG

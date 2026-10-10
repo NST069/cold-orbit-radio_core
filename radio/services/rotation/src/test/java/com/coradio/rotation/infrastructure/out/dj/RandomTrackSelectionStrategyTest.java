@@ -7,11 +7,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 
 @ExtendWith(MockitoExtension.class)
 class RandomTrackSelectionStrategyTest {
@@ -24,15 +24,15 @@ class RandomTrackSelectionStrategyTest {
     @BeforeEach
     void setUp() {
         candidates = List.of(
-                new TrackInfo(UUID.randomUUID(), "Artist 1", "Title 1", 180, "track1.mp3"),
-                new TrackInfo(UUID.randomUUID(), "Artist 2", "Title 2", 180, "track2.mp3"),
-                new TrackInfo(UUID.randomUUID(), "Artist 3", "Title 3", 180, "track3.mp3")
+                new TrackInfo(UUID.randomUUID(), "Artist 1", "Title 1", "", 180, "track1.mp3"),
+                new TrackInfo(UUID.randomUUID(), "Artist 2", "Title 2", "", 180, "track2.mp3"),
+                new TrackInfo(UUID.randomUUID(), "Artist 3", "Title 3", "", 180, "track3.mp3")
         );
     }
 
     @Test
     void selectTracks_countIsZero_shouldReturnSingleTrack() {
-        List<TrackInfo> result = strategy.selectTracks(candidates, 0, List.of());
+        List<TrackInfo> result = strategy.selectTracks(candidates, 0, Set.of());
 
         assertEquals(1, result.size());
 
@@ -41,14 +41,14 @@ class RandomTrackSelectionStrategyTest {
 
     @Test
     void selectTracks_shouldSelectOnlyTracksFromCandidates() {
-        List<TrackInfo> result = strategy.selectTracks(candidates, 10, List.of());
+        List<TrackInfo> result = strategy.selectTracks(candidates, 10, Set.of());
 
         assertTrue(candidates.containsAll(result));
     }
 
     @Test
     void selectTracks_noCandidates_shouldReturnEmptyList() {
-        List<TrackInfo> result = strategy.selectTracks(List.of(), 1, List.of());
+        List<TrackInfo> result = strategy.selectTracks(List.of(), 1, Set.of());
 
         assertEquals(0, result.size());
     }

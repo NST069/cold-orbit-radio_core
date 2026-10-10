@@ -61,7 +61,4 @@ class TrackFileEntity {
     @JoinColumn(name = "track_id", nullable = false)
     lateinit var trackEntity: TrackEntity
 
-    @OneToMany(mappedBy = "trackFileEntity")
-    lateinit var analysisJobEntities: MutableList<AnalysisJobEntity>
-
 }
