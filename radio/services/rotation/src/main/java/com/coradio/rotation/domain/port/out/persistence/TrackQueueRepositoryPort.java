@@ -32,7 +32,7 @@ public interface TrackQueueRepositoryPort {
 
     void markReady(UUID id, String localPath);
 
-    void markPlaying(UUID id);
+    Instant markPlaying(UUID id);
 
     void markPlayed(UUID id);
 
