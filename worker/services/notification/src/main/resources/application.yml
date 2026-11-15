@@ -15,7 +15,7 @@ spring:
       username: ${REDIS_USERNAME}
       password: ${REDIS_PASSWORD}
       connect-timeout: 10s
-      timeout: 30s
+      timeout: 75s
       ssl:
         enabled: true
 

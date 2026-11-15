@@ -25,15 +25,22 @@ public class RedisStreamListener {
             String consumerName,
             RedisStreamHandler handler
     ) {
-        container.receive(
-                Consumer.from(
-                        consumerGroup,
-                        consumerName
-                ),
-                StreamOffset.create(
-                        stream,
-                        ReadOffset.lastConsumed()
-                ),
+        var offset = StreamOffset.create(
+                stream,
+                ReadOffset.lastConsumed()
+        );
+
+        var request = StreamMessageListenerContainer.StreamReadRequest
+                .builder(offset)
+                .consumer(Consumer.from(consumerGroup, consumerName))
+                .errorHandler(error ->
+                        log.error("Redis stream polling failed: stream={}", stream, error)
+                )
+                .cancelOnError(error -> false)
+                .build();
+
+        container.register(
+                request,
                 message -> {
                     log.debug("Message Received: id={}, value={}", message.getId(), message.getValue());
 
